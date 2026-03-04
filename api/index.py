@@ -1,13 +1,18 @@
 from fastapi import FastAPI
-from fastapi.responses import FileResponse
+from fastapi.responses import HTMLResponse
 import os
 
 app = FastAPI()
 
 @app.get("/")
 def read_root():
-    # This tells the brain to grab your HTML file from the public folder
-    return FileResponse(os.path.join('public', 'index.html'))
+    # Look for the file in the same folder as this script
+    current_dir = os.path.dirname(os.path.realpath(__file__))
+    file_path = os.path.join(current_dir, "index.html")
+    
+    with open(file_path, "r", encoding="utf-8") as f:
+        content = f.read()
+    return HTMLResponse(content=content)
 
 @app.get("/api/health")
 def health():

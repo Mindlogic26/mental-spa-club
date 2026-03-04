@@ -1,19 +1,79 @@
-from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
-import os
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mental Spa Club | The Lobby</title>
+    <style>
+        /* Minimalist Reset & Variables */
+        :root {
+            --bg-color: #f4f7f6; /* Soft Sage/Grey */
+            --text-color: #4a4a4a;
+            --accent-color: #8da9a6;
+            --white: #ffffff;
+        }
 
-app = FastAPI()
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            text-align: center;
+        }
 
-@app.get("/")
-def read_root():
-    # Look for the file in the same folder as this script
-    current_dir = os.path.dirname(os.path.realpath(__file__))
-    file_path = os.path.join(current_dir, "index.html")
-    
-    with open(file_path, "r", encoding="utf-8") as f:
-        content = f.read()
-    return HTMLResponse(content=content)
+        /* Lobby Container */
+        .container {
+            max-width: 600px;
+            padding: 40px;
+            background: var(--white);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05); /* Soft shadow */
+        }
 
-@app.get("/api/health")
-def health():
-    return {"status": "The Mental Spa is online."}
+        h1 {
+            font-weight: 300;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+
+        p {
+            font-weight: 300;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        /* Journey Button */
+        .btn {
+            display: inline-block;
+            padding: 12px 35px;
+            background-color: var(--accent-color);
+            color: var(--white);
+            text-decoration: none;
+            border-radius: 30px;
+            transition: 0.3s ease;
+            letter-spacing: 1px;
+            font-size: 0.9rem;
+        }
+
+        .btn:hover {
+            background-color: #7a9491;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Welcome to the Club</h1>
+        <p>Take a deep breath. This is your quiet corner of the internet, designed to help you recalibrate and find your center.</p>
+        <a href="#" class="btn">BEGIN JOURNEY</a>
+    </div>
+
+</body>
+</html>

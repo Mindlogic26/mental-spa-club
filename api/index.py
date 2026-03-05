@@ -24,22 +24,17 @@ def open_room(room_folder):
 
 @app.post("/api/generate-flower")
 async def generate_flower(request: Request):
-    # This specifically checks if the key is even loaded
     api_key = os.environ.get("GEMINI_API_KEY")
-    if not api_key:
-        return {"error": "API Key is missing from Vercel settings"}
-
     data = await request.json()
     mood = data.get("mood", "calm")
     
-    # Using the most reliable URL format
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+    # Using the standard V1 URL
+    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
     
     payload = {
-        "contents": [{"parts": [{"text": f"The user feels {mood}. Tell them 1 flower name and 1 short quote."}]}]
+        "contents": [{"parts": [{"text": f"The user is feeling {mood}. Recommend one specific flower and a short, 1-sentence inspirational quote. Format as: Flower Name: [Name]. Quote: [Quote]."}]}]
     }
     
-    # We add a timeout so the server doesn't hang forever
     response = requests.post(url, json=payload, timeout=10)
     return response.json()
 

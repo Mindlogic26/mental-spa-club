@@ -25,37 +25,41 @@
             const [mood, setMood] = useState('');
             const [result, setResult] = useState(null);
 
-            const handleReveal = async (e) => {
-                e.preventDefault();
-                
-                try {
-                    // This "knocks" on the new door we built in index.py
-                    const response = await fetch('/api/generate-flower', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ mood: mood })
-                    });
+ const handleReveal = async (e) => {
+    e.preventDefault();
+    setResult(null); // Clear old results
+    
+    try {
+        const response = await fetch('/api/generate-flower', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mood: mood })
+        });
 
-                    const data = await response.json();
-                    
-                    // This takes the AI's "Chatty" response and shows it on screen
-                    // We look for the text inside Gemini's specific data structure
-                    const aiText = data.candidates[0].content.parts[0].text;
-                    
-                    setResult({
-                        flower: "Your Soul Flower",
-                        meaning: "Reflection Complete",
-                        quote: aiText
-                    });
-                } catch (err) {
-                    console.error("AI Error:", err);
-                    setResult({
-                        flower: "Connection Error",
-                        meaning: "The mirror is foggy",
-                        quote: "Please check your API key in Vercel settings."
-                    });
-                }
-            };
+        const data = await response.json();
+        
+        // Safety check: Did Google send an error?
+        if (data.error) {
+            throw new Error(data.error.message);
+        }
+
+        // Navigate the "data package" carefully to find the text
+        const aiText = data.candidates[0].content.parts[0].text;
+        
+        setResult({
+            flower: "Reflection Result",
+            meaning: "Your heart has been heard",
+            quote: aiText
+        });
+    } catch (err) {
+        console.error("Mirror Error:", err);
+        setResult({
+            flower: "Mirror is Clouded",
+            meaning: "Something went wrong",
+            quote: "I couldn't reach the stars. Please try again in a moment."
+        });
+    }
+};
 
 
 

@@ -21,23 +21,25 @@ def open_room(room_folder):
 # +++ NEW ADDITION START +++
 # This is a "POST" route. Unlike the others, it doesn't show a page; 
 # it processes data behind the scenes.
+
 @app.post("/api/generate-flower")
 async def generate_flower(request: Request):
     api_key = os.environ.get("GEMINI_API_KEY")
     data = await request.json()
     mood = data.get("mood", "peaceful")
     
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+    # THE UPDATED URL (v1 instead of v1beta)
+    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
     
-    # Updated Prompt for a cleaner response
-    prompt = f"The user is feeling '{mood}'. Suggest one flower and a short quote. Keep it brief."
+    prompt = f"The user is feeling '{mood}'. Suggest one specific flower and a short quote. Answer in this format: Flower: [Name]. Quote: [Quote]."
     
     payload = {
         "contents": [{"parts": [{"text": prompt}]}]
     }
     
     response = requests.post(url, json=payload)
-    result = response.json()
+    return response.json()
+
     
     # This helps us debug! If there is an error, it shows up in Vercel Logs
     if "error" in result:

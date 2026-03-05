@@ -1,12 +1,30 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Mental Spa Club</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <h1>Welcome to the Club</h1>
-    <p>This is your quiet corner of the internet.</p>
-</body>
-</html>
+from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
+import os
+
+app = FastAPI()
+
+# HELPER FUNCTION: This is the "Door" that opens any room you create
+def open_room(room_folder):
+    current_dir = os.path.dirname(os.path.realpath(__file__))
+    file_path = os.path.join(current_dir, room_folder, "index.html")
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+    except Exception:
+        return HTMLResponse(content=f"The {room_folder} room is currently locked.", status_code=404)
+
+# --- ROUTE 1: THE LOBBY ---
+@app.get("/")
+def lobby():
+    return open_room("lobby")
+
+# --- ROUTE 2: THE FLORAL MIRROR ---
+@app.get("/mirror")
+def mirror():
+    return open_room("mirror")
+
+# --- ROUTE 3: THE LABYRINTH ---
+@app.get("/labyrinth")
+def labyrinth():
+    return open_room("labyrinth")

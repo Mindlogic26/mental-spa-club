@@ -1,9 +1,3 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { GoogleGenAI, Type } from '@google/genai';
-import { Sparkles, ArrowRight, Flower2, Download } from 'lucide-react';
-import { toPng } from 'html-to-image';
-
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 function BreathingLoader() {
@@ -355,3 +349,5 @@ export default function App() {
     </div>
   );
 }
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);

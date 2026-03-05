@@ -25,15 +25,41 @@
             const [mood, setMood] = useState('');
             const [result, setResult] = useState(null);
 
-            const handleReveal = (e) => {
+            const handleReveal = async (e) => {
                 e.preventDefault();
-                // This is a "Success Test" to see if the screen works
-                setResult({
-                    flower: "Jasmine",
-                    meaning: "Grace and Elegance",
-                    quote: "Deep in their roots, all flowers keep the light."
-                });
+                
+                try {
+                    // This "knocks" on the new door we built in index.py
+                    const response = await fetch('/api/generate-flower', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ mood: mood })
+                    });
+
+                    const data = await response.json();
+                    
+                    // This takes the AI's "Chatty" response and shows it on screen
+                    // We look for the text inside Gemini's specific data structure
+                    const aiText = data.candidates[0].content.parts[0].text;
+                    
+                    setResult({
+                        flower: "Your Soul Flower",
+                        meaning: "Reflection Complete",
+                        quote: aiText
+                    });
+                } catch (err) {
+                    console.error("AI Error:", err);
+                    setResult({
+                        flower: "Connection Error",
+                        meaning: "The mirror is foggy",
+                        quote: "Please check your API key in Vercel settings."
+                    });
+                }
             };
+
+
+
+
 
             return (
                 <div className="p-6 max-w-md w-full text-center">

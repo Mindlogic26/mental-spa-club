@@ -1,19 +1,132 @@
-const { useState, useEffect, useRef } = React;
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>The Floral Mirror</title>
-  </head>
+    
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
 
-    <script type="text/babel" src="script.js"></script>
-
-
-  <body>
+    <style>
+        body { background-color: #f4f7f6; margin: 0; }
+        .font-serif { font-family: Georgia, serif; }
+    </style>
+</head>
+<body>
     <div id="root"></div>
-  </body>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        const { motion, AnimatePresence } = FramerMotion;
+
+        // Simple replacements for missing icons
+        const ArrowRight = () => <span className="ml-2">→</span>;
+        const Flower2 = ({className}) => <span className={className}>✿</span>;
+        const Download = () => <span className="ml-2">↓</span>;
+        const Sparkles = ({className}) => <span className={className}>✨</span>;
+
+        function BreathingLoader() {
+            const [phaseIndex, setPhaseIndex] = useState(0);
+            const phases = [
+                { text: "Breathe in...", duration: 4, scale: 1.5 },
+                { text: "Hold...", duration: 4, scale: 1.5 },
+                { text: "Breathe out...", duration: 6, scale: 1 },
+                { text: "Hold...", duration: 2, scale: 1 },
+            ];
+
+            useEffect(() => {
+                let timeoutId;
+                const runCycle = (index) => {
+                    setPhaseIndex(index);
+                    timeoutId = setTimeout(() => {
+                        runCycle((index + 1) % phases.length);
+                    }, phases[index].duration * 1000);
+                };
+                runCycle(0);
+                return () => clearTimeout(timeoutId);
+            }, []);
+
+            return (
+                <div className="flex flex-col items-center justify-center space-y-16 min-h-[50vh]">
+                    <motion.div 
+                        animate={{ scale: phases[phaseIndex].scale }}
+                        transition={{ duration: phases[phaseIndex].duration, ease: "easeInOut" }}
+                        className="w-32 h-32 rounded-full bg-emerald-100 border border-emerald-200 flex items-center justify-center"
+                    >
+                        <Flower2 className="w-8 h-8 text-emerald-600" />
+                    </motion.div>
+                    <p className="font-serif text-2xl text-emerald-800 italic">{phases[phaseIndex].text}</p>
+                </div>
+            );
+        }
+
+        function App() {
+            const [mood, setMood] = useState('');
+            const [isLoading, setIsLoading] = useState(false);
+            const [result, setResult] = useState(null);
+
+            const handleReveal = async (e) => {
+                e.preventDefault();
+                setIsLoading(true);
+                
+                // Simulating the AI response for testing connectivity first
+                setTimeout(() => {
+                    setResult({
+                        flowerName: "White Jasmine",
+                        botanicalMeaning: "Purity, elegance, and deep emotional connectivity.",
+                        quote: "Deep in their roots, all flowers keep the light.",
+                        author: "Theodore Roethke",
+                        imageUrl: "https://images.unsplash.com/photo-1507290439931-a861b5a38200?auto=format&fit=crop&q=80&w=1000"
+                    });
+                    setIsLoading(false);
+                }, 3000);
+            };
+
+            return (
+                <div className="min-h-screen flex flex-col items-center justify-center p-6">
+                    <AnimatePresence mode="wait">
+                        {!result && !isLoading && (
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center space-y-8">
+                                <h1 className="text-4xl font-serif text-emerald-900">How is your heart feeling today?</h1>
+                                <form onSubmit={handleReveal} className="space-y-4">
+                                    <input 
+                                        type="text" 
+                                        value={mood}
+                                        onChange={(e) => setMood(e.target.value)}
+                                        placeholder="Enter your mood..."
+                                        className="w-full max-w-md p-4 bg-transparent border-b-2 border-emerald-200 focus:outline-none focus:border-emerald-500 text-center text-xl"
+                                    />
+                                    <br/>
+                                    <button className="px-8 py-3 bg-emerald-800 text-white rounded-full hover:bg-emerald-700 transition-all">
+                                        Reveal My Flower <ArrowRight />
+                                    </button>
+                                </form>
+                            </motion.div>
+                        )}
+
+                        {isLoading && <BreathingLoader />}
+
+                        {result && !isLoading && (
+                            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="max-w-md w-full bg-white p-8 rounded-2xl shadow-xl text-center space-y-6">
+                                <img src={result.imageUrl} className="w-full h-64 object-cover rounded-xl" />
+                                <h2 className="text-3xl font-serif text-emerald-900">{result.flowerName}</h2>
+                                <p className="text-emerald-700 italic">{result.botanicalMeaning}</p>
+                                <blockquote className="text-gray-600 border-t pt-4">"{result.quote}"</blockquote>
+                                <p className="text-xs uppercase tracking-widest text-gray-400">— {result.author}</p>
+                                <button onClick={() => setResult(null)} className="text-emerald-600 hover:underline">Reflect Again</button>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
 </html>

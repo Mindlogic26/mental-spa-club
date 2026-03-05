@@ -8,11 +8,10 @@
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
 
     <style>
-        body { background-color: #f4f7f6; margin: 0; }
+        body { background-color: #f4f7f6; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
         .font-serif { font-family: Georgia, serif; }
     </style>
 </head>
@@ -20,11 +19,7 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect } = React;
-        const { motion, AnimatePresence } = FramerMotion;
-
-        // Simple Icons
-        const FlowerIcon = () => <span className="text-4xl text-emerald-600">✿</span>;
+        const { useState } = React;
 
         function App() {
             const [mood, setMood] = useState('');
@@ -32,44 +27,41 @@
 
             const handleReveal = (e) => {
                 e.preventDefault();
-                // This is a test result to make sure the screen works!
+                // This is a "Success Test" to see if the screen works
                 setResult({
-                    flowerName: "Jasmine",
-                    meaning: "Elegance and Grace",
+                    flower: "Jasmine",
+                    meaning: "Grace and Elegance",
                     quote: "Deep in their roots, all flowers keep the light."
                 });
             };
 
             return (
-                <div className="min-h-screen flex items-center justify-center p-6">
-                    <AnimatePresence>
-                        {!result ? (
-                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center space-y-8">
-                                <h1 className="text-4xl font-serif text-emerald-900">How is your heart feeling today?</h1>
-                                <form onSubmit={handleReveal} className="space-y-6">
-                                    <input 
-                                        type="text" 
-                                        value={mood}
-                                        onChange={(e) => setMood(e.target.value)}
-                                        placeholder="e.g. Hopeful..."
-                                        className="w-full max-w-md p-4 bg-transparent border-b-2 border-emerald-200 focus:outline-none focus:border-emerald-500 text-center text-xl"
-                                    />
-                                    <br/>
-                                    <button className="px-10 py-3 bg-emerald-800 text-white rounded-full hover:bg-emerald-700 transition-all">
-                                        Reveal My Flower
-                                    </button>
-                                </form>
-                            </motion.div>
-                        ) : (
-                            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="max-w-md w-full bg-white p-10 rounded-2xl shadow-xl text-center space-y-6">
-                                <FlowerIcon />
-                                <h2 className="text-3xl font-serif text-emerald-900">{result.flowerName}</h2>
-                                <p className="text-emerald-700 italic">{result.meaning}</p>
-                                <blockquote className="text-gray-500 border-t pt-4 italic">"{result.quote}"</blockquote>
-                                <button onClick={() => setResult(null)} className="text-emerald-600 hover:underline pt-4 block w-full text-center">Start Over</button>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
+                <div className="p-6 max-w-md w-full text-center">
+                    {!result ? (
+                        <div className="space-y-8">
+                            <h1 className="text-4xl font-serif text-emerald-900">How is your heart feeling?</h1>
+                            <form onSubmit={handleReveal} className="space-y-6">
+                                <input 
+                                    type="text" 
+                                    value={mood}
+                                    onChange={(e) => setMood(e.target.value)}
+                                    placeholder="Enter a feeling..."
+                                    className="w-full p-4 bg-transparent border-b-2 border-emerald-200 focus:outline-none focus:border-emerald-500 text-center text-xl font-serif"
+                                />
+                                <button className="block w-full py-4 bg-emerald-800 text-white rounded-full hover:bg-emerald-700 transition-all font-bold">
+                                    REVEAL MY FLOWER
+                                </button>
+                            </form>
+                        </div>
+                    ) : (
+                        <div className="bg-white p-10 rounded-3xl shadow-2xl space-y-6 border border-emerald-50">
+                            <div className="text-6xl">✿</div>
+                            <h2 className="text-3xl font-serif text-emerald-900">{result.flower}</h2>
+                            <p className="text-emerald-700 italic">{result.meaning}</p>
+                            <p className="text-gray-400 border-t pt-4">"{result.quote}"</p>
+                            <button onClick={() => setResult(null)} className="text-emerald-600 underline text-sm mt-4">Start Over</button>
+                        </div>
+                    )}
                 </div>
             );
         }

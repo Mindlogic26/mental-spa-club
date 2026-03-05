@@ -23,26 +23,29 @@ def open_room(room_folder):
 # it processes data behind the scenes.
 @app.post("/api/generate-flower")
 async def generate_flower(request: Request):
-    # 1. Grab your secret key from the Vercel "vault" you just set up
     api_key = os.environ.get("GEMINI_API_KEY")
-    
-    # 2. Receive the mood (the data) sent from your HTML page
     data = await request.json()
     mood = data.get("mood", "peaceful")
     
-    # 3. This is the "Address" of Google's Gemini AI
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
     
-    # 4. Our instructions to the AI
-    prompt = f"The user is feeling '{mood}'. Suggest one specific flower and a quote."
+    # Updated Prompt for a cleaner response
+    prompt = f"The user is feeling '{mood}'. Suggest one flower and a short quote. Keep it brief."
     
     payload = {
         "contents": [{"parts": [{"text": prompt}]}]
     }
     
-    # 5. Actually make the "phone call" to Google
     response = requests.post(url, json=payload)
-    return response.json()
+    result = response.json()
+    
+    # This helps us debug! If there is an error, it shows up in Vercel Logs
+    if "error" in result:
+        print(f"AI Error: {result['error']}")
+        
+    return result
+
+
 # +++ NEW ADDITION END +++
 
 # --- ROUTE 1: THE LOBBY (Remains same) ---

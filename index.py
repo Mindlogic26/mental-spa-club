@@ -1,12 +1,23 @@
-from fastapi.responses import FileResponse
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, FileResponse
 import os
 import requests
 
 app = FastAPI()
 
-# This is the AI part - it stays here so all rooms can use it
+# 1. The Home Page (Lobby)
+@app.get("/")
+async def home():
+    # This sends the actual Lobby file to your browser
+    return FileResponse('rooms/lobby/index.html')
+
+# 2. The Mirror Page
+@app.get("/mirror")
+async def mirror_page():
+    # This sends the actual Mirror file to your browser
+    return FileResponse('rooms/mirror/index.html')
+
+# 3. The AI Logic (For the Mirror to work)
 @app.post("/api/generate")
 async def ai_logic(request: Request):
     api_key = os.environ.get("GEMINI_API_KEY")
@@ -19,14 +30,3 @@ async def ai_logic(request: Request):
     payload = {"contents": [{"parts": [{"text": prompt}]}]}
     response = requests.post(url, json=payload)
     return response.json()
-
-# This makes the homepage work
-@app.get("/")
-async def home():
-    # This tells the brain to hand the user the Lobby file immediately
-    return FileResponse('rooms/lobby/index.html')
-
-@app.get("/mirror")
-async def mirror_page():
-    # This does the same for the Mirror
-    return FileResponse('rooms/mirror/index.html')

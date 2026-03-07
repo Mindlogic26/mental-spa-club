@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.responses import FileResponse
 import os
 import requests
 
@@ -17,7 +17,7 @@ async def mirror_page():
     # This sends the actual Mirror file to your browser
     return FileResponse('rooms/mirror/index.html')
 
-# 3. The AI Logic (For the Mirror to work)
+# 3. The AI Logic
 @app.post("/api/generate")
 async def ai_logic(request: Request):
     api_key = os.environ.get("GEMINI_API_KEY")

@@ -1,30 +1,65 @@
-from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
-import os
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Floral Mirror</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-stone-50 min-h-screen flex items-center justify-center font-serif">
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState } = React;
+        function App() {
+            const [mood, setMood] = useState('');
+            const [result, setResult] = useState(null);
+            const [loading, setLoading] = useState(false);
 
-app = FastAPI()
+            const handleReveal = async (e) => {
+                e.preventDefault();
+                setLoading(true);
+                try {
+                    const response = await fetch('/api/generate-flower', {
+                        method: 'POST',
+                        body: JSON.stringify({ mood })
+                    });
+                    const data = await response.json();
+                    const text = data.candidates[0].content.parts[0].text;
+                    
+                    // Logic to split the AI text into Name and Quote
+                    const flowerName = text.split('|')[0].replace('FLOWER:', '').trim();
+                    const quote = text.split('|')[1].replace('QUOTE:', '').trim();
+                    
+                    setResult({ flowerName, quote });
+                } catch (err) { alert("Mirror is foggy. Check your Vercel Key!"); }
+                setLoading(false);
+            };
 
-# HELPER FUNCTION: This is the "Door" that opens any room you create
-def open_room(room_folder):
-    current_dir = os.path.dirname(os.path.realpath(__file__))
-    file_path = os.path.join(current_dir, room_folder, "index.html")
-    try:
-        with open(file_path, "r", encoding="utf-8") as f:
-            return HTMLResponse(content=f.read())
-    except Exception:
-        return HTMLResponse(content=f"The {room_folder} room is currently locked.", status_code=404)
-
-# --- ROUTE 1: THE LOBBY ---
-@app.get("/")
-def lobby():
-    return open_room("lobby")
-
-# --- ROUTE 2: THE FLORAL MIRROR ---
-@app.get("/mirror")
-def mirror():
-    return open_room("mirror")
-
-# --- ROUTE 3: THE LABYRINTH ---
-@app.get("/labyrinth")
-def labyrinth():
-    return open_room("labyrinth")
+            return (
+                <div className="max-w-md w-full p-8 text-center">
+                    {!result ? (
+                        <form onSubmit={handleReveal} className="space-y-6">
+                            <h1 className="text-3xl text-emerald-900">How is your heart?</h1>
+                            <input type="text" value={mood} onChange={(e)=>setMood(e.target.value)} placeholder="Type a feeling..." className="w-full border-b-2 border-emerald-200 bg-transparent text-center text-xl focus:outline-none focus:border-emerald-600 pb-2"/>
+                            <button className="bg-emerald-800 text-white px-8 py-3 rounded-full hover:bg-emerald-700">{loading ? "Reflecting..." : "Reveal My Flower"}</button>
+                        </form>
+                    ) : (
+                        <div className="bg-white p-6 rounded-2xl shadow-xl space-y-4">
+                            {/* This is the magic photo link */}
+                            <img src={`https://images.unsplash.com/photo-1500000000000?${result.flowerName}`} 
+                                 className="w-full h-64 object-cover rounded-lg" 
+                                 alt={result.flowerName} 
+                                 onError={(e) => e.target.src='https://images.unsplash.com/photo-1490750967868-88aa4486c946?auto=format&fit=crop&w=800&q=80'}/>
+                            <h2 className="text-2xl text-emerald-900">{result.flowerName}</h2>
+                            <p className="italic text-gray-600 font-sans">"{result.quote}"</p>
+                            <button onClick={()=>setResult(null)} className="text-emerald-600 underline text-sm">Clear Mirror</button>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>

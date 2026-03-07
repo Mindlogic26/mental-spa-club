@@ -1,103 +1,36 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>The Floral Mirror</title>
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse
+import os
+import requests
+
+app = FastAPI()
+
+def open_room(room_folder):
+    current_dir = os.path.dirname(os.path.realpath(__file__))
+    file_path = os.path.join(current_dir, room_folder, "index.html")
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+    except Exception as e:
+        return HTMLResponse(content=f"Error: {str(e)}", status_code=404)
+
+@app.post("/api/generate-flower")
+async def generate_flower(request: Request):
+    api_key = os.environ.get("GEMINI_API_KEY")
+    data = await request.json()
+    mood = data.get("mood", "peaceful")
     
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <style>
-        body { background-color: #f4f7f6; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .font-serif { font-family: Georgia, serif; }
-    </style>
-</head>
-<body>
-    <div id="root"></div>
-
-    <script type="text/babel">
-        const { useState } = React;
-
-        function App() {
-            const [mood, setMood] = useState('');
-            const [result, setResult] = useState(null);
-
- const handleReveal = async (e) => {
-    e.preventDefault();
-    setResult(null); // Clear old results
+    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
     
-    try {
-        const response = await fetch('/api/generate-flower', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ mood: mood })
-        });
+    # We ask for a very specific format so the HTML can easily "read" it
+    prompt = f"The user feels {mood}. Provide a matching flower name and a short quote. Format exactly like this: FLOWER: [Name] | QUOTE: [Quote]"
+    
+    payload = {"contents": [{"parts": [{"text": prompt}]}]}
+    response = requests.post(url, json=payload)
+    return response.json()
 
-        const data = await response.json();
-        
-        // Safety check: Did Google send an error?
-        if (data.error) {
-            throw new Error(data.error.message);
-        }
+@app.get("/")
+def read_root(): return open_room("lobby")
 
-        // Navigate the "data package" carefully to find the text
-        const aiText = data.candidates[0].content.parts[0].text;
-        
-        setResult({
-            flower: "Reflection Result",
-            meaning: "Your heart has been heard",
-            quote: aiText
-        });
-    } catch (err) {
-        console.error("Mirror Error:", err);
-        setResult({
-            flower: "Mirror is Clouded",
-            meaning: "Something went wrong",
-            quote: "I couldn't reach the stars. Please try again in a moment."
-        });
-    }
-};
-
-
-
-
-
-            return (
-                <div className="p-6 max-w-md w-full text-center">
-                    {!result ? (
-                        <div className="space-y-8">
-                            <h1 className="text-4xl font-serif text-emerald-900">How is your heart feeling?</h1>
-                            <form onSubmit={handleReveal} className="space-y-6">
-                                <input 
-                                    type="text" 
-                                    value={mood}
-                                    onChange={(e) => setMood(e.target.value)}
-                                    placeholder="Enter a feeling..."
-                                    className="w-full p-4 bg-transparent border-b-2 border-emerald-200 focus:outline-none focus:border-emerald-500 text-center text-xl font-serif"
-                                />
-                                <button className="block w-full py-4 bg-emerald-800 text-white rounded-full hover:bg-emerald-700 transition-all font-bold">
-                                    REVEAL MY FLOWER
-                                </button>
-                            </form>
-                        </div>
-                    ) : (
-                        <div className="bg-white p-10 rounded-3xl shadow-2xl space-y-6 border border-emerald-50">
-                            <div className="text-6xl">✿</div>
-                            <h2 className="text-3xl font-serif text-emerald-900">{result.flower}</h2>
-                            <p className="text-emerald-700 italic">{result.meaning}</p>
-                            <p className="text-gray-400 border-t pt-4">"{result.quote}"</p>
-                            <button onClick={() => setResult(null)} className="text-emerald-600 underline text-sm mt-4">Start Over</button>
-                        </div>
-                    )}
-                </div>
-            );
-        }
-
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
-</body>
-</html>
+@app.get("/mirror")
+def read_mirror(): return open_room("mirror")

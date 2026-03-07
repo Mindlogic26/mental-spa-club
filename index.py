@@ -16,7 +16,7 @@ async def mirror_page():
 @app.post("/api/generate")
 async def ai_logic(request: Request):
     # TEMPORARY DIRECT KEY TEST
-    api_key = "AIzaSyAvhiIPnFPILwcUAyUfclyWOFayvNQqAss"
+    api_key = os.environ.get("GEMINI_API_KEY")
     
     data = await request.json()
     mood = data.get("mood", "peaceful")

@@ -15,7 +15,9 @@ async def mirror_page():
 
 @app.post("/api/generate")
 async def ai_logic(request: Request):
-    api_key = os.environ.get("GEMINI_API_KEY")
+    # TEMPORARY DIRECT KEY TEST
+    api_key = "AIzaSyAvhiIPnFPILwcUAyUfclyWOFayvNQqAss"
+    
     data = await request.json()
     mood = data.get("mood", "peaceful")
     
@@ -23,7 +25,7 @@ async def ai_logic(request: Request):
     
     payload = {
         "contents": [{
-            "parts": [{"text": f"Give me one flower name and one short quote for feeling {mood}. Format: FLOWER: [Name] | QUOTE: [Quote]"}]
+            "parts": [{"text": f"FLOWER: Rose | QUOTE: Love blooms everywhere."}]
         }]
     }
     

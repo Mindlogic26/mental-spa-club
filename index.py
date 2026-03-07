@@ -1,3 +1,4 @@
+from fastapi.responses import FileResponse
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 import os
@@ -22,4 +23,10 @@ async def ai_logic(request: Request):
 # This makes the homepage work
 @app.get("/")
 async def home():
-    return {"message": "The Spa is Online"}
+    # This tells the brain to hand the user the Lobby file immediately
+    return FileResponse('rooms/lobby/index.html')
+
+@app.get("/mirror")
+async def mirror_page():
+    # This does the same for the Mirror
+    return FileResponse('rooms/mirror/index.html')

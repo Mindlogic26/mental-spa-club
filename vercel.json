@@ -1,8 +1,12 @@
 {
+  {
   "version": 2,
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/index.py" },
-    { "source": "/mirror", "destination": "/rooms/mirror/index.html" },
-    { "source": "/", "destination": "/rooms/lobby/index.html" }
+  "builds": [
+    { "src": "index.py", "use": "@vercel/python" }
+  ],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "index.py" },
+    { "src": "/mirror", "dest": "index.py" },
+    { "src": "/(.*)", "dest": "index.py" }
   ]
 }

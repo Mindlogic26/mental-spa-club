@@ -17,28 +17,29 @@ async def mirror_page():
 async def ai_logic(request: Request):
     api_key = os.environ.get("GEMINI_API_KEY")
     
-    # 1. Check if Vercel even sees your key
     if not api_key:
-        return {"error": "Key missing from Vercel settings"}
+        return {"error": "Vercel Key is MISSING from settings"}
 
     data = await request.json()
     mood = data.get("mood", "peaceful")
     
-    # 2. Use the exact V1 URL for stability
+    # Using the most stable v1beta URL
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
     
-    prompt = f"Give me one flower name and one short quote for someone feeling {mood}. Format: FLOWER: [Name] | QUOTE: [Quote]"
-    payload = {"contents": [{"parts": [{"text": prompt}]}]}
+    payload = {
+        "contents": [{
+            "parts": [{"text": f"Give me one flower name and one quote for feeling {mood}. Format: FLOWER: [Name] | QUOTE: [Quote]"}]
+        }]
+    }
     
-    # 3. Ask Google and catch any errors
     try:
         response = requests.post(url, json=payload)
-        response_data = response.json()
+        r_json = response.json()
         
-        # If Google sends an error (like 'Invalid API Key'), we pass it to the Mirror
-        if "error" in response_data:
-            return {"error": response_data["error"]["message"]}
+        # This checks if Google sent an error message instead of a flower
+        if "error" in r_json:
+            return {"error": f"Google says: {r_json['error']['message']}"}
             
-        return response_data
+        return r_json
     except Exception as e:
-        return {"error": str(e)}
+        return {"error": f"Connection Error: {str(e)}"}

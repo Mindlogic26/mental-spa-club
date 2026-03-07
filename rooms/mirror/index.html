@@ -20,75 +20,66 @@
             const [result, setResult] = useState(null);
             const [loading, setLoading] = useState(false);
 
-            // This is the part you were struggling with! It's now inside the "App"
+            // 1. PASTE YOUR API KEY INSIDE THE QUOTES BELOW
+            const API_KEY = "PASTE_YOUR_ACTUAL_KEY_HERE"; 
+
             const handleReveal = async (e) => {
                 e.preventDefault();
                 setLoading(true);
                 try {
-                    const response = await fetch('/api/generate', {
+                    // We talk DIRECTLY to Google now
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${API_KEY}`, {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({ mood })
+                        body: JSON.stringify({
+                            contents: [{
+                                parts: [{text: `Recommend one flower and one short positive quote for the mood: ${mood}. Format: FLOWER: [Name] | QUOTE: [Quote]`}]
+                            }]
+                        })
                     });
+
                     const data = await response.json();
-
-                    // LOG THE FULL DATA: Look at your console to see the real message!
-                    console.log("Full Response from Brain:", data);
-
-                    // 1. Check if Google sent an error
+                    
                     if (data.error) {
-                        alert("Google says: " + data.error.message);
-                        return;
-                    }
-
-                    // 2. Check if the response is empty
-                    if (!data.candidates || data.candidates.length === 0) {
-                        alert("Google sent an empty box. Check if your API is enabled!");
+                        alert("Google Error: " + data.error.message);
+                        setLoading(false);
                         return;
                     }
 
                     const text = data.candidates[0].content.parts[0].text;
                     const flowerName = text.split('|')[0].replace('FLOWER:', '').trim();
                     const quote = text.split('|')[1]?.replace('QUOTE:', '').trim() || "Embrace the beauty.";
+                    
                     setResult({ flowerName, quote });
-
                 } catch (err) { 
-                    console.error("Mirror Error:", err);
-                    alert("Mirror is foggy. Try refreshing the page!"); 
+                    alert("The Mirror is still foggy. Check your browser console!");
                 }
                 setLoading(false);
             };
-
-
 
             return (
                 <div className="max-w-md w-full p-8 text-center">
                     {!result ? (
                         <form onSubmit={handleReveal} className="space-y-6">
-                            <h1 className="text-3xl text-emerald-900">How is your heart?</h1>
+                            <h1 className="text-3xl text-emerald-900 italic">How is your heart today?</h1>
                             <input 
                                 type="text" 
                                 value={mood} 
                                 onChange={(e) => setMood(e.target.value)} 
                                 placeholder="Type a feeling..." 
                                 className="w-full border-b-2 border-emerald-200 bg-transparent text-center text-xl focus:outline-none focus:border-emerald-600 pb-2"
+                                required
                             />
-                            <button className="bg-emerald-800 text-white px-8 py-3 rounded-full hover:bg-emerald-700 transition shadow-lg">
-                                {loading ? "Reflecting..." : "Reveal My Flower"}
+                            <button className="bg-emerald-800 text-white px-8 py-3 rounded-full hover:bg-emerald-700 transition shadow-lg w-full">
+                                {loading ? "Clearing the fog..." : "Reveal My Flower"}
                             </button>
-                            <div className="mt-4 text-sm text-stone-400">
-                                <a href="/" className="hover:underline">Back to Lobby</a>
-                            </div>
                         </form>
                     ) : (
-                        <div className="bg-white p-8 rounded-2xl shadow-2xl space-y-6 border border-emerald-50 animate-fade-in">
-                            <div className="text-emerald-800 text-4xl">❀</div>
-                            <h2 className="text-2xl text-emerald-900 font-bold">{result.flowerName}</h2>
+                        <div className="bg-white p-8 rounded-2xl shadow-2xl space-y-6 border border-emerald-50">
+                            <div className="text-emerald-800 text-5xl">❀</div>
+                            <h2 className="text-2xl text-emerald-900 font-bold uppercase">{result.flowerName}</h2>
                             <p className="italic text-stone-600 text-lg">"{result.quote}"</p>
-                            <button 
-                                onClick={() => {setResult(null); setMood('');}} 
-                                className="text-emerald-600 underline text-sm hover:text-emerald-800"
-                            >
+                            <button onClick={() => {setResult(null); setMood('');}} className="text-emerald-600 underline text-sm pt-4">
                                 Clear Mirror
                             </button>
                         </div>

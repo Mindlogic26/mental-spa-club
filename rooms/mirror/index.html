@@ -9,22 +9,17 @@ const handleReveal = async (e) => {
         });
         const data = await response.json();
 
-        // LOG THE DATA: This lets us see the real error in the "Inspect" console
-        console.log("Google Response:", data);
-
-        if (data.error) {
-            alert("Google Error: " + data.error.message);
-        } else if (data.candidates && data.candidates[0].content) {
-            const text = data.candidates[0].content.parts[0].text;
-            const flowerName = text.split('|')[0].replace('FLOWER:', '').trim();
-            const quote = text.split('|')[1]?.replace('QUOTE:', '').trim() || "Embrace the beauty.";
-            setResult({ flowerName, quote });
-        } else {
-            // This catches "Safety Filter" blocks from Google
-            alert("The mirror is clouded by Google's safety filters. Try a gentler mood!");
-        }
+        // This line pulls the text from the "Diagnostic Daisy"
+        const text = data.candidates[0].content.parts[0].text;
+        
+        // This splits the text into the Flower Name and the Quote
+        const flowerName = text.split('|')[0].replace('FLOWER:', '').trim();
+        const quote = text.split('|')[1]?.replace('QUOTE:', '').trim() || "Embrace the beauty.";
+        
+        setResult({ flowerName, quote });
     } catch (err) { 
-        alert("Connection lost. Check your internet or Vercel logs."); 
+        console.error(err);
+        alert("Mirror is foggy. Check your Vercel logs!"); 
     }
     setLoading(false);
 };

@@ -5,40 +5,40 @@ import requests
 
 app = FastAPI()
 
-# 1. THE LOBBY (Home Page)
 @app.get("/")
 async def home():
-    # This physically hands the Lobby file to the browser
     return FileResponse('rooms/lobby/index.html')
 
-# 2. THE MIRROR PAGE
 @app.get("/mirror")
 async def mirror_page():
-    # This physically hands the Mirror file to the browser
     return FileResponse('rooms/mirror/index.html')
 
-# 3. THE AI BRAIN
 @app.post("/api/generate")
 async def ai_logic(request: Request):
-    # This reaches into your Vercel "Locker" for the key
     api_key = os.environ.get("GEMINI_API_KEY")
     
+    # 1. Check if Vercel even sees your key
     if not api_key:
-        return {"error": "API Key is missing from Vercel Settings"}
+        return {"error": "Key missing from Vercel settings"}
 
     data = await request.json()
     mood = data.get("mood", "peaceful")
     
-    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
+    # 2. Use the exact V1 URL for stability
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
     
-    prompt = f"The user feels {mood}. Provide a matching flower name and a short quote. Format exactly: FLOWER: [Name] | QUOTE: [Quote]"
+    prompt = f"Give me one flower name and one short quote for someone feeling {mood}. Format: FLOWER: [Name] | QUOTE: [Quote]"
+    payload = {"contents": [{"parts": [{"text": prompt}]}]}
     
-    payload = {
-        "contents": [{"parts": [{"text": prompt}]}]
-    }
-    
+    # 3. Ask Google and catch any errors
     try:
         response = requests.post(url, json=payload)
-        return response.json()
+        response_data = response.json()
+        
+        # If Google sends an error (like 'Invalid API Key'), we pass it to the Mirror
+        if "error" in response_data:
+            return {"error": response_data["error"]["message"]}
+            
+        return response_data
     except Exception as e:
         return {"error": str(e)}

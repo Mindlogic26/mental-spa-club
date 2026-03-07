@@ -15,19 +15,21 @@ async def mirror_page():
 
 @app.post("/api/generate")
 async def ai_logic(request: Request):
-    # This looks for the key in your Vercel Settings
+    # This grabs your NEW key from Vercel
     api_key = os.environ.get("GEMINI_API_KEY")
     
     data = await request.json()
     mood = data.get("mood", "peaceful")
     
-    # Using the stable v1 URL
+    # Using the stable v1 URL you just enabled
     url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
     
-    # The Real AI Prompt
-    prompt = f"The user feels {mood}. Provide a matching flower name and a short quote. Format: FLOWER: [Name] | QUOTE: [Quote]"
-    
-    payload = {"contents": [{"parts": [{"text": prompt}]}]}
+    # We are asking for a REAL flower now
+    payload = {
+        "contents": [{
+            "parts": [{"text": f"Give me one flower name and one short quote for someone feeling {mood}. Format: FLOWER: [Name] | QUOTE: [Quote]"}]
+        }]
+    }
     
     try:
         response = requests.post(url, json=payload)

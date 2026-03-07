@@ -22,7 +22,7 @@ async def ai_logic(request: Request):
     mood = data.get("mood", "peaceful")
     
     # Using the stable v1 URL you just enabled
-    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
     
     # We are asking for a REAL flower now
     payload = {

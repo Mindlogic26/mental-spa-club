@@ -15,31 +15,31 @@ async def mirror_page():
 
 @app.post("/api/generate")
 async def ai_logic(request: Request):
+    # This grabs the key from your Vercel Environment Variables
     api_key = os.environ.get("GEMINI_API_KEY")
     
     if not api_key:
-        return {"error": "Vercel Key is MISSING from settings"}
+        return {"error": "Key is missing in Vercel settings"}
 
     data = await request.json()
     mood = data.get("mood", "peaceful")
     
-    # Using the most stable v1beta URL
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+    # We are using the most stable 'v1' endpoint
+    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent"
+    
+    # Handing the key as a 'parameter' instead of inside the URL string
+    params = {'key': api_key}
     
     payload = {
         "contents": [{
-            "parts": [{"text": f"Give me one flower name and one quote for feeling {mood}. Format: FLOWER: [Name] | QUOTE: [Quote]"}]
+            "parts": [{"text": f"Give me one flower name and a short quote for the mood: {mood}. Format: FLOWER: [Name] | QUOTE: [Quote]"}]
         }]
     }
     
     try:
-        response = requests.post(url, json=payload)
-        r_json = response.json()
-        
-        # This checks if Google sent an error message instead of a flower
-        if "error" in r_json:
-            return {"error": f"Google says: {r_json['error']['message']}"}
-            
-        return r_json
+        # We send the request with the key separated for better security
+        response = requests.post(url, json=payload, params=params)
+        return response.json()
     except Exception as e:
-        return {"error": f"Connection Error: {str(e)}"}
+        return {"error": str(e)}
+    

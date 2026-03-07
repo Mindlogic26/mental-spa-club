@@ -32,18 +32,34 @@
                     });
                     const data = await response.json();
 
-                    // This pulls the text from our Diagnostic Daisy or the AI
+                    // LOG THE FULL DATA: Look at your console to see the real message!
+                    console.log("Full Response from Brain:", data);
+
+                    // 1. Check if Google sent an error
+                    if (data.error) {
+                        alert("Google says: " + data.error.message);
+                        return;
+                    }
+
+                    // 2. Check if the response is empty
+                    if (!data.candidates || data.candidates.length === 0) {
+                        alert("Google sent an empty box. Check if your API is enabled!");
+                        return;
+                    }
+
                     const text = data.candidates[0].content.parts[0].text;
                     const flowerName = text.split('|')[0].replace('FLOWER:', '').trim();
                     const quote = text.split('|')[1]?.replace('QUOTE:', '').trim() || "Embrace the beauty.";
-                    
                     setResult({ flowerName, quote });
+
                 } catch (err) { 
-                    console.error(err);
-                    alert("Mirror is foggy. Check your Vercel logs!"); 
+                    console.error("Mirror Error:", err);
+                    alert("Mirror is foggy. Try refreshing the page!"); 
                 }
                 setLoading(false);
             };
+
+
 
             return (
                 <div className="max-w-md w-full p-8 text-center">

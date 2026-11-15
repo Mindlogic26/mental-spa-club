@@ -1,34 +1,838 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mental Spa - Lobby</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MentalSpa.club</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Layout idea: one calm white column; the puzzle board on the left, the eight options on the right, controls underneath. Light only, by choice. */
+  color-scheme: light;
+  --paper: #ffffff;
+  --mist: #f5f7fa;
+  --line: #dde3ea;
+  --ink: #1e293b;
+  --soft: #64748b;
+  --accent: #0f766e;
+  --accent-soft: #e6f4f2;
+  --good: #15803d;
+  --good-soft: #e8f6ec;
+  --bad: #b91c1c;
+  --bad-soft: #fdecec;
+  --font-body: "Manrope", "Segoe UI", system-ui, sans-serif;
+  --font-num: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --radius: 10px;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.wrap { max-width: 940px; margin: 0 auto; padding: 20px 20px 56px; display: flex; flex-direction: column; gap: 22px; }
+
+header { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 14px 24px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+.brand h1 { margin: 0; font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; }
+.brand h1 span { color: var(--soft); font-weight: 500; }
+.brand p { margin: 2px 0 0; color: var(--soft); font-size: 0.92rem; max-width: 46ch; text-wrap: balance; }
+.brand h1 a { color: inherit; text-decoration: none; }
+#crumb { display: flex; align-items: center; gap: 12px; font-size: 0.92rem; font-weight: 700; }
+#crumb:empty { display: none; }
+.back { color: var(--soft); text-decoration: none; font-weight: 600; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; }
+.back:hover { color: var(--ink); border-color: var(--ink); }
+
+.home { display: flex; flex-direction: column; gap: 18px; }
+.home-lede { margin: 0; font-size: 1.15rem; color: var(--soft); max-width: 50ch; text-wrap: balance; }
+.tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.tile { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; text-decoration: none; color: var(--ink); background: var(--paper); transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s; }
+.tile:hover { transform: translateY(-3px); box-shadow: 0 10px 28px rgba(15, 23, 42, 0.1); border-color: #b8c2cf; }
+.tile-art { background: var(--mist); border-bottom: 1px solid var(--line); }
+.tile-art svg { display: block; width: 100%; height: auto; }
+.tile-dark .tile-art { background: #10131d; border-bottom-color: #10131d; }
+.tile-text { padding: 14px 18px 18px; display: flex; flex-direction: column; gap: 4px; }
+.tile-text h2 { margin: 0; font-size: 1.2rem; letter-spacing: -0.01em; }
+.tile-text p { margin: 0; color: var(--soft); font-size: 0.92rem; }
+
+.stage { background: radial-gradient(circle at 50% 40%, #1b2133 0%, #0d1018 75%); border-radius: 16px; min-height: 420px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 28px 20px; color: #e2e8f0; }
+.orb { width: 190px; height: 190px; border-radius: 50%; margin-bottom: 22px; transform: scale(0.55); background: radial-gradient(circle at 36% 32%, #a9bcdc 0%, #5b6f97 30%, #2c3654 62%, #141a2b 100%); box-shadow: 0 0 60px rgba(120, 150, 210, 0.25), inset 0 -14px 30px rgba(0, 0, 0, 0.45); will-change: transform; }
+.b-phase { margin: 0; font-size: 1.35rem; font-weight: 700; min-height: 1.6em; }
+.b-count { margin: 0; font-family: var(--font-num); font-size: 1.1rem; color: #94a3b8; min-height: 1.5em; }
+.b-round { margin: 0; font-size: 0.85rem; color: #7c8aa3; min-height: 1.4em; }
+
+#view { display: flex; flex-direction: column; gap: 16px; }
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { border: 1px solid var(--line); background: var(--paper); border-radius: 999px; padding: 6px 14px; font-size: 0.88rem; font-weight: 600; color: var(--soft); cursor: pointer; }
+.chip:hover { border-color: var(--soft); }
+.chip.on { background: var(--ink); border-color: var(--ink); color: #fff; }
+.stats { display: flex; gap: 22px; margin: 0; }
+.stats div { display: flex; flex-direction: column; align-items: flex-end; }
+.stats dt { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--soft); }
+.stats dd { margin: 0; font-family: var(--font-num); font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.meta { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.pill { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; padding: 3px 10px; border-radius: 999px; background: var(--mist); color: var(--soft); }
+.pill.tier-1 { background: #e8f6ec; color: #166534; }
+.pill.tier-2 { background: #e2f3f5; color: #155e75; }
+.pill.tier-3 { background: #fdf3dc; color: #92400e; }
+.pill.tier-4 { background: #fde9e1; color: #9a3412; }
+.pill.tier-5 { background: #f3e8fd; color: #6b21a8; }
+.code, .qnum { font-family: var(--font-num); font-size: 0.8rem; color: var(--soft); }
+.qnum { color: var(--ink); font-weight: 700; font-size: 0.9rem; }
+.label { margin: 0 0 8px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--soft); }
+
+.puzzle { display: grid; grid-template-columns: minmax(0, 400px) minmax(0, 1fr); gap: 28px; align-items: start; }
+.board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 8px; background: var(--mist); border: 1px solid var(--line); border-radius: var(--radius); }
+.puzzle > * { min-width: 0; }
+.board-strip { gap: 4px; width: 100%; min-width: 0; }
+.board-strip .cell { min-width: 0; }
+.puzzle:has(.board-strip) { grid-template-columns: 1fr; }
+.opts.opts-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; max-width: 560px; }
+.typed { display: flex; flex-direction: column; gap: 8px; max-width: 420px; }
+.typed .label { margin: 0; }
+.typed-row { display: flex; gap: 10px; }
+.typed-input { flex: 1 1 auto; min-width: 0; font-family: var(--font-num); font-size: 1.5rem; font-weight: 700; padding: 8px 14px; border: 1.5px solid var(--line); border-radius: 8px; color: var(--ink); background: #fff; }
+.typed-input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
+.typed-input.is-correct { border-color: var(--good); background: var(--good-soft); color: var(--good); opacity: 1; }
+.typed-input.is-wrong { border-color: var(--bad); background: var(--bad-soft); color: var(--bad); opacity: 1; }
+.typed-note { margin: 0; font-size: 0.85rem; color: var(--soft); }
+.cell { aspect-ratio: 1; background: #fff; border: 1px solid var(--line); border-radius: 6px; display: grid; place-items: center; }
+.cell svg, .opt svg { width: 100%; height: 100%; display: block; }
+.opt svg { transform: translateY(5%) scale(0.86); }
+.cell-missing { border: 2px dashed #94a3b8; background: var(--mist); }
+.cell-missing span { font-size: 2rem; font-weight: 800; color: #94a3b8; }
+.cell-answer { border: 2px solid var(--good); }
+.opts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.opt { position: relative; aspect-ratio: 1; padding: 0; background: #fff; border: 1.5px solid var(--line); border-radius: 8px; cursor: pointer; transition: border-color 0.12s, box-shadow 0.12s, transform 0.12s; }
+.opt:hover:not(:disabled) { border-color: var(--ink); transform: translateY(-1px); box-shadow: 0 3px 10px rgba(15, 23, 42, 0.08); }
+.opt:disabled { cursor: default; }
+.opt-letter { position: absolute; top: 4px; left: 6px; font-family: var(--font-num); font-size: 0.72rem; font-weight: 700; color: var(--soft); background: rgba(255, 255, 255, 0.85); border-radius: 4px; padding: 0 3px; z-index: 1; }
+.opt.is-chosen { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.opt.is-correct { border-color: var(--good); box-shadow: 0 0 0 3px var(--good-soft); }
+.opt.is-wrong { border-color: var(--bad); box-shadow: 0 0 0 3px var(--bad-soft); }
+.opt.is-correct .opt-letter { background: var(--good); color: #fff; }
+.opt.is-wrong .opt-letter { background: var(--bad); color: #fff; }
+
+.after { display: flex; flex-direction: column; gap: 14px; }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.btn { border-radius: 8px; padding: 9px 18px; font-weight: 700; font-size: 0.95rem; cursor: pointer; border: 1.5px solid transparent; }
+.btn.primary { background: var(--ink); color: #fff; }
+.btn.primary:hover { background: #0f172a; }
+.btn.ghost { background: var(--paper); border-color: var(--line); color: var(--ink); }
+.btn.ghost:hover:not(:disabled) { border-color: var(--ink); }
+.btn:disabled { opacity: 0.45; cursor: default; }
+.btn.big { padding: 12px 26px; font-size: 1rem; align-self: flex-start; }
+.verdict { margin: 0; font-weight: 700; }
+.verdict.ok, .verdict-inline.ok { color: var(--good); }
+.verdict.no, .verdict-inline.no { color: var(--bad); }
+.verdict-inline { font-weight: 700; font-size: 0.88rem; }
+.explain { background: var(--mist); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: var(--radius); padding: 16px 20px; max-width: 68ch; }
+.explain ol { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
+.explain-answer { margin: 12px 0 0; font-size: 0.92rem; color: var(--soft); }
+
+.clock { font-family: var(--font-num); font-weight: 700; font-size: 1.3rem; font-variant-numeric: tabular-nums; padding: 4px 12px; border-radius: 8px; background: var(--mist); border: 1px solid var(--line); }
+.clock.low { color: var(--bad); border-color: var(--bad); background: var(--bad-soft); }
+.dots { display: flex; flex-wrap: wrap; gap: 5px; }
+.dot { width: 30px; height: 30px; border-radius: 6px; border: 1px solid var(--line); background: var(--paper); font-family: var(--font-num); font-size: 0.72rem; font-weight: 700; color: var(--soft); cursor: pointer; padding: 0; }
+.dot.done { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.dot.ok { background: var(--good-soft); border-color: var(--good); color: var(--good); }
+.dot.no { background: var(--bad-soft); border-color: var(--bad); color: var(--bad); }
+.dot.cur { outline: 2px solid var(--ink); outline-offset: 1px; }
+.confirm { background: var(--mist); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 18px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.confirm p { margin: 0; font-weight: 600; }
+
+.intro { display: flex; flex-direction: column; gap: 16px; max-width: 640px; }
+.intro h2, .result h2 { margin: 0; font-size: 1.5rem; letter-spacing: -0.02em; text-wrap: balance; }
+.lede { margin: 0; color: var(--soft); max-width: 60ch; }
+.facts { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.facts li { border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; }
+.facts b { font-family: var(--font-num); font-size: 1.4rem; }
+.facts span { font-size: 0.85rem; color: var(--soft); }
+.note { margin: 0; font-size: 0.9rem; color: var(--soft); max-width: 62ch; }
+.history table { border-collapse: collapse; width: 100%; max-width: 380px; font-variant-numeric: tabular-nums; font-size: 0.92rem; }
+.history th, .history td { text-align: left; padding: 6px 10px 6px 0; border-bottom: 1px solid var(--line); }
+.history th { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--soft); }
+.result { display: flex; flex-wrap: wrap; gap: 20px 40px; align-items: center; padding: 22px; background: var(--mist); border: 1px solid var(--line); border-radius: var(--radius); }
+.score { display: flex; align-items: baseline; gap: 8px; font-family: var(--font-num); }
+.score-num { font-size: 4.2rem; font-weight: 700; line-height: 1; }
+.score-of { font-size: 1.4rem; color: var(--soft); }
+.result-side { display: flex; flex-direction: column; gap: 12px; flex: 1 1 280px; align-items: flex-start; }
+.bars { display: flex; flex-direction: column; gap: 6px; width: 100%; max-width: 360px; }
+.bar-row { display: grid; grid-template-columns: 70px 1fr 54px; align-items: center; gap: 10px; font-size: 0.88rem; }
+.bar-row b { font-family: var(--font-num); font-variant-numeric: tabular-nums; text-align: right; }
+.bar { height: 8px; background: #fff; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+.bar i { display: block; height: 100%; }
+.bar i.tier-1 { background: #22a35a; } .bar i.tier-2 { background: #1b9aaa; } .bar i.tier-3 { background: #d99a1c; } .bar i.tier-4 { background: #e0662f; } .bar i.tier-5 { background: #8b45d6; }
+.review-title { margin: 8px 0 0; font-size: 1.05rem; }
+.share { margin: 0; padding: 12px 16px; background: #fff; border: 1px solid var(--line); border-radius: 8px; font-family: var(--font-body); font-size: 0.95rem; line-height: 1.5; white-space: pre-wrap; user-select: all; -webkit-user-select: all; }
+.copied { align-self: center; font-size: 0.88rem; font-weight: 600; color: var(--soft); }
+footer { border-top: 1px solid var(--line); padding-top: 14px; color: var(--soft); font-size: 0.82rem; }
+footer p { margin: 0; max-width: 75ch; }
+
+@media (max-width: 720px) {
+  .puzzle { grid-template-columns: 1fr; gap: 18px; }
+  .board { max-width: 420px; width: 100%; justify-self: center; }
+  .board-strip { gap: 3px; padding: 5px; justify-self: start; }
+  .stats { gap: 16px; }
+  .facts { grid-template-columns: 1fr; }
+  .tiles { grid-template-columns: 1fr; }
+  .stage { min-height: 360px; }
+}
+@media (prefers-reduced-motion: reduce) { .tile { transition: none; } .tile:hover { transform: none; } .opt { transition: none; } .opt:hover:not(:disabled) { transform: none; } }
+/* ---- home page: three groups of rooms, as approved 12 Nov ---- */
+.ritual { background: #10241f; color: #e8f1ed; border-radius: 18px; padding: 22px 24px; margin: 0 0 30px;
+  display: flex; gap: 22px; align-items: center; flex-wrap: wrap; }
+.ritual-art { flex: none; }
+.ritual-body { flex: 1 1 260px; }
+.ritual .kicker { margin: 0 0 6px; font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #8fbcae; }
+.ritual h2 { margin: 0 0 6px; font-size: 23px; line-height: 1.25; }
+.ritual p { margin: 0 0 14px; color: #b9cfc7; font-size: 15px; }
+.ritual-go { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.ritual .btn { background: #e8f1ed; color: #10241f; border-color: #e8f1ed; }
+.ritual-state { font-size: 14px; color: #8fbcae; }
+.group-head { display: flex; align-items: baseline; gap: 12px; margin: 0 0 12px; flex-wrap: wrap; }
+.group-head h2 { margin: 0; font-size: 22px; }
+.group-head p { margin: 0; color: #64748b; font-size: 15px; }
+.group { margin-bottom: 30px; }
+@media (min-width: 900px) { .tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.tile-soon { cursor: default; border-style: dashed; background: #fbfcfc; }
+.tile-soon:hover { transform: none; box-shadow: none; border-color: var(--line); }
+.tile-soon .tile-art { background: #11231f; opacity: .4; }
+.tile-soon .tile-text h2, .tile-soon .tile-text p { opacity: .65; }
+.soon { display: inline-block; margin-top: 6px; font-size: 12px; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; color: #64748b; }
+
+/* ---- shapes room ---- */
+.board-shapes { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; }
+.board-shapes .cell { width: clamp(56px, 14vw, 96px); height: auto; aspect-ratio: 1; }
+.board-shapes .cell svg { width: 100%; height: 100%; display: block; }
+.sep { font-size: 19px; font-weight: 700; color: #94a3b8; padding: 0 2px; }
+.sep-wide { padding: 0 10px; }
+.opt-shape svg { width: 100%; height: 100%; display: block; }
+
+/* ---- logic room ---- */
+.lg-intro { margin: 0 0 14px; color: #64748b; }
+.lg-facts { margin: 0 0 18px; padding: 0; list-style: none; counter-reset: f; display: grid; gap: 7px; }
+.lg-facts li { counter-increment: f; display: flex; gap: 12px; align-items: baseline;
+  padding: 11px 15px; background: #f1f5f4; border-radius: 12px; font-size: 17px; font-weight: 500; }
+.lg-facts li::before { content: counter(f); flex: none; width: 1.2em; font-size: 13px; font-weight: 700; color: #94a3b8; }
+.lg-opts { display: grid; gap: 8px; }
+.lg-opts .opt { display: flex; gap: 12px; align-items: center; text-align: left; width: 100%;
+  padding: 11px 15px; font-size: 16px; }
+.lg-opts .opt .opt-letter { position: static; flex: none; min-width: 2em; }
+.lg-explain ol { margin: 0 0 10px; padding-left: 22px; }
+.lg-explain .orders { font-weight: 600; }
+.lg-explain .arrow { color: #94a3b8; font-weight: 400; padding: 0 3px; }
+.lg-explain .caption { font-size: 13px; color: #64748b; margin: -4px 0 10px; }
+.lg-scroll { overflow-x: auto; margin: 0 0 10px; }
+.lg-explain table { border-collapse: collapse; width: 100%; font-size: 14px; background: #fff; border-radius: 10px; overflow: hidden; }
+.lg-explain th, .lg-explain td { padding: 5px 7px; text-align: left; border-bottom: 1px solid #eef2f1; vertical-align: top; }
+.lg-explain th { font-size: 13px; color: #64748b; }
+.lg-explain td.k { font-weight: 700; width: 1%; white-space: nowrap; }
+.lg-explain td.n { color: #94a3b8; width: 1%; }
+.lg-explain td.bad { color: #a6402f; background: #f6e3df; text-decoration: underline; }
+.lg-explain tr.works td { background: #ddefea; font-weight: 600; }
+.lg-explain dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; }
+.lg-explain dt { font-weight: 700; }
+.lg-explain dt.right { color: #0f766e; }
+.lg-explain dd { margin: 0; }
+
+/* ---- open a puzzle by code ---- */
+.findcode { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; font-size: 14px; color: #64748b; }
+.findcode input { font: inherit; font-size: 14px; width: 130px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 9px; }
+.findcode .btn { padding: 6px 12px; font-size: 14px; }
+@media (max-width: 560px) { .lg-facts li { font-size: 15px; } .lg-opts .opt { font-size: 15px; } .ritual { padding: 18px; } }
+
+/* the shared option button is a square sized for a figure; logic options are lines of text */
+.lg-opts .opt { aspect-ratio: auto; position: relative; }
+.lg-opts .opt .opt-letter { position: static; background: none; padding: 0; font-size: 0.85rem; min-width: 1.6em; }
+.lg-opts .opt.is-correct .opt-letter { background: var(--good); color: #fff; border-radius: 4px; padding: 0 4px; }
+.lg-opts .opt.is-wrong .opt-letter { background: var(--bad); color: #fff; border-radius: 4px; padding: 0 4px; }
+/* figures need room on a phone: three bigger options beat five cramped ones */
+@media (max-width: 560px) {
+  .opts.opts-5 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .board-shapes .cell { width: clamp(62px, 19vw, 96px); }
+}
+
+</style>
 </head>
-<body class="bg-stone-50 min-h-screen flex flex-col items-center justify-center font-serif text-stone-800">
-    <h1 class="text-4xl mb-12 italic text-emerald-900">Welcome to the Spa</h1>
-    
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl w-full px-6 text-center">
-    
-    <a href="/rooms/mirror/index.html" class="group p-8 border-2 border-emerald-100 bg-white rounded-3xl shadow-sm hover:shadow-xl hover:border-emerald-500 transition-all">
-        <img src="https://em-content.zobj.net/source/apple/391/mirror_1fa9e.png" alt="New Mirror" class="w-16 h-16 mx-auto mb-4 object-contain">
-        <h2 class="text-lg font-bold text-emerald-800 uppercase tracking-widest">Experimental Mirror</h2>
-        <p class="text-stone-500 text-sm italic mt-2">Testing new moods & animations</p>
-    </a>
-
-    <a href="https://the-floral-mirror.vercel.app/" target="_blank" class="group p-8 border-2 border-purple-100 bg-white rounded-3xl shadow-sm hover:shadow-xl hover:border-purple-500 transition-all">
-        <img src="https://em-content.zobj.net/source/apple/391/framed-picture_1f5bc-fe0f.png" alt="Legacy Mirror" class="w-16 h-16 mx-auto mb-4 object-contain">
-        <h2 class="text-lg font-bold text-purple-800 uppercase tracking-widest">Legacy Mirror</h2>
-        <p class="text-stone-500 text-sm italic mt-2">Open original Vercel app</p>
-    </a>
-
-    <div class="p-8 border-2 border-stone-100 bg-stone-50 rounded-3xl opacity-50">
-        <img src="https://em-content.zobj.net/source/apple/391/leaf-fluttering-in-wind_1f343.png" alt="Garden" class="w-16 h-16 mx-auto mb-4 object-contain grayscale">
-        <h2 class="text-lg font-bold text-stone-400 uppercase tracking-widest">Garden Room</h2>
-        <p class="text-stone-400 text-sm italic mt-2">Coming soon</p>
+<body>
+<svg id="defs" width="0" height="0" style="position:absolute" aria-hidden="true"></svg>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <h1><a href="#home">MentalSpa<span>.club</span></a></h1>
+      <p>A quiet place to breathe, focus and train your mind.</p>
     </div>
-
+    <nav id="crumb" aria-label="Room"></nav>
+  </header>
+  <main id="view"></main>
+  <footer><p>Prototype. Puzzles are generated on the spot, and scores and streaks stay in this browser. In the puzzle rooms, keys A to H pick an option.</p></footer>
 </div>
+<script src="matrices.js"></script>
+<script src="numbers.js"></script>
+<script src="shapes.js"></script>
+<script src="logic.js"></script>
+<script>
+(function () {
+  'use strict';
+  const E = window.MentalSpaEngine;
+  // Shapes and Logic were written as standalone rooms and take (level, seed) rather than (seed, tier);
+  // these wrappers give them the same shape as the other two instead of changing working engines.
+  const SH = window.ShapesEngine, LG = window.LogicEngine;
+  const wrap = (eng) => ({ TIERS: [1, 2, 3, 4, 5], generate: (seed, tier) => { const p = eng.generate(tier, seed); p.tier = p.level; return p; } });
+  const ENGINES = { matrices: window.MentalSpaEngine, numbers: window.MentalSpaNumbers, shapes: wrap(SH), logic: wrap(LG) };
+  const ROOM_LABEL = { matrices: 'Matrices', numbers: 'Numbers', shapes: 'Shapes', logic: 'Logic' };
+  const CODE_PREFIX = { matrices: 'L', numbers: 'N', shapes: 'S', logic: 'D' };
+  const CODE_ROOM = { L: 'matrices', N: 'numbers', S: 'shapes', D: 'logic' };
+  function parseCode(raw) {
+    const m = /^\s*([LNSD])\s*(\d)\s*-\s*(\d{1,10})\s*$/i.exec(String(raw || ''));
+    if (!m) return null;
+    const seed = Number(m[3]);
+    if (seed > 4294967295) return null;
+    return { room: CODE_ROOM[m[1].toUpperCase()], tier: Number(m[2]), seed: seed };
+  }
+  function gen(room, seed, tier) { const p = ENGINES[room].generate(seed, tier); p.eng = room; return p; }
+  const $ = (s) => document.querySelector(s);
+  const LETTERS = 'ABCDEFGH';
+  const TIER_LABEL = { 1: 'Level 1 · Warm-up', 2: 'Level 2 · Easy', 3: 'Level 3 · Medium', 4: 'Level 4 · Hard', 5: 'Level 5 · Expert' };
+  const TIER_SHORT = { 1: 'Level 1', 2: 'Level 2', 3: 'Level 3', 4: 'Level 4', 5: 'Level 5' };
+  const TEST_PLAN = [[1, 5], [2, 5], [3, 5], [4, 5], [5, 5]];
+  const TEST_TOTAL = 25;
+  const TEST_SECONDS = 30 * 60;
+
+  document.getElementById('defs').innerHTML = '<defs>' + E.hatchDefs() + '</defs>';
+
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem('mindspa.' + k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem('mindspa.' + k, JSON.stringify(v)); } catch (e) { /* storage unavailable */ } }
+  };
+  const newSeed = () => Math.floor(Math.random() * 2147483646) + 1;
+  const HL = '<rect x="12" y="12" width="28" height="28" rx="4" fill="none" stroke="#16a34a" stroke-width="3.5"/>';
+  const cellSVG = (p, cell, hl) => '<svg viewBox="0 0 100 100" aria-hidden="true">' + ENGINES[p.eng || 'matrices'].renderCell(cell) + (hl ? HL : '') + '</svg>';
+  const code = (p) => p.code || (CODE_PREFIX[p.eng || 'matrices'] + p.tier + '-' + p.seed);
+  const fmt = (s) => Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+
+  // ---------- shared puzzle view ----------
+  // state: { puzzle, chosen (index|null), reveal (bool), explain (bool) }
+  const esc = (t) => String(t).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+
+  // Shapes: figures in a row with the missing one at the end (odd one out has no row at all).
+  function shapesHTML(st) {
+    const p = st.puzzle;
+    const fig = (f) => '<div class="cell">' + SH.svg(f) + '</div>';
+    const sep = (t, wide) => `<span class="sep${wide ? ' sep-wide' : ''}" aria-hidden="true">${t}</span>`;
+    const gap = st.reveal ? '<div class="cell cell-answer">' + SH.svg(p.options[p.answer]) + '</div>'
+      : '<div class="cell cell-missing"><span>?</span></div>';
+    let board = '';
+    if (p.form === 'analogy') board = fig(p.stem[0]) + sep('\u2192') + fig(p.stem[1]) + sep('as', true) + fig(p.stem[2]) + sep('\u2192') + gap;
+    else if (p.form === 'series') board = p.stem.map(fig).join('') + gap;
+    let opts = '';
+    p.options.forEach((f, i) => {
+      let cls = 'opt opt-shape';
+      if (st.reveal) { if (i === p.answer) cls += ' is-correct'; else if (i === st.chosen) cls += ' is-wrong'; }
+      else if (i === st.chosen) cls += ' is-chosen';
+      opts += `<button type="button" class="${cls}" data-opt="${i}" ${st.locked ? 'disabled' : ''} aria-label="Option ${LETTERS[i]}: ${esc(SH.describe(f))}"><span class="opt-letter">${LETTERS[i]}</span>${SH.svg(f)}</button>`;
+    });
+    return (board ? `<div class="board board-shapes" role="img" aria-label="${esc(p.prompt)}">${board}</div>` : '')
+      + `<div class="opts-wrap"><p class="label">${esc(p.prompt)}</p><div class="opts opts-5">${opts}</div></div>`;
+  }
+
+  // Logic: statements to read, then five statements to choose between. No figures.
+  function logicHTML(st) {
+    const p = st.puzzle;
+    const facts = p.premises.map((t) => '<li>' + esc(t) + '</li>').join('');
+    let opts = '';
+    p.options.forEach((t, i) => {
+      let cls = 'opt';
+      if (st.reveal) { if (i === p.answer) cls += ' is-correct'; else if (i === st.chosen) cls += ' is-wrong'; }
+      else if (i === st.chosen) cls += ' is-chosen';
+      opts += `<button type="button" class="${cls}" data-opt="${i}" ${st.locked ? 'disabled' : ''}><span class="opt-letter">${LETTERS[i]}</span><span>${esc(t)}</span></button>`;
+    });
+    return `<p class="lg-intro">${esc(p.intro)}</p><ol class="lg-facts" aria-label="Statements">${facts}</ol>
+      <div class="opts-wrap"><p class="label">${esc(p.question)}</p><div class="lg-opts">${opts}</div></div>`;
+  }
+
+  // Logic explanations come as blocks (text, chain of steps, possible orders, a table, a note per option).
+  function logicExplain(p) {
+    let h = '';
+    p.explain.forEach((b) => {
+      if (b.t === 'p') h += '<p>' + esc(b.text) + '</p>';
+      if (b.t === 'steps') h += '<ol>' + b.items.map((x) => '<li>' + esc(x) + '</li>').join('') + '</ol>';
+      if (b.t === 'orders') {
+        h += '<ol class="orders">' + b.rows.map((row) => '<li>' + row.map(esc).join('<span class="arrow">\u203a</span>') + '</li>').join('') + '</ol>';
+        h += '<p class="caption">Each line reads ' + esc(b.label) + '.</p>';
+      }
+      if (b.t === 'table') {
+        const head = '<tr><th>#</th>' + b.people.map((n) => '<th>' + esc(n) + '</th>').join('') + '<th>Works?</th></tr>';
+        const rows = b.rows.map((row, i) => '<tr class="' + (row.ok ? 'works' : 'fails') + '"><td class="n">' + (i + 1) + '</td>'
+          + row.kinds.map((k, j) => '<td class="k' + (j === row.who ? ' bad' : '') + '">' + k + '</td>').join('')
+          + '<td>' + (row.ok ? '\u2713 ' : '\u2715 ') + esc(row.why) + '</td></tr>').join('');
+        h += '<div class="lg-scroll"><table>' + head + rows + '</table></div><p class="caption">T = truth-teller, L = liar.</p>';
+      }
+      if (b.t === 'options') {
+        h += '<p class="label">Each option</p><dl>' + b.notes.map((note, i) =>
+          '<dt class="' + (i === p.answer ? 'right' : '') + '">' + LETTERS[i] + '</dt><dd>' + esc(note) + '</dd>').join('') + '</dl>';
+      }
+    });
+    return h;
+  }
+
+  function puzzleHTML(st) {
+    if (st.puzzle.eng === 'shapes') return shapesHTML(st);
+    if (st.puzzle.eng === 'logic') return logicHTML(st);
+    const p = st.puzzle, hl = !!st.explain && p.hint === 'pos0';
+    const strip = p.layout === 'strip', nums = p.eng === 'numbers';
+    const total = p.cells.length + 1, gap = p.gap === undefined ? p.cells.length : p.gap;
+    const sol = p.solution || p.options[p.answer];
+    let board = '', c = 0;
+    for (let i = 0; i < total; i++) {
+      if (i !== gap) board += '<div class="cell">' + cellSVG(p, p.cells[c++], hl) + '</div>';
+      else if (st.reveal) board += '<div class="cell cell-answer">' + cellSVG(p, sol, hl) + '</div>';
+      else board += '<div class="cell cell-missing"><span>?</span></div>';
+    }
+    const aria = strip ? 'Number series with one term missing' : nums ? '3 by 3 number grid, bottom-right cell missing' : '3 by 3 matrix puzzle, bottom-right cell missing';
+    const ask = strip ? (gap === total - 1 ? 'Which number comes next?' : 'Which number fills the gap?') : nums ? 'Which number is missing?' : 'Which option completes the pattern?';
+    const style = strip ? ` style="grid-template-columns:repeat(${total},1fr);max-width:${total * 112}px"` : '';
+    let answerUI;
+    if (p.typed) {
+      const shown = st.typedValue === undefined ? '' : st.typedValue;
+      const cls = st.reveal ? (st.correct ? ' is-correct' : ' is-wrong') : '';
+      answerUI = `<form class="typed" id="typed-form" novalidate><label class="label" for="typed-answer">${ask} Type it.</label>
+        <div class="typed-row"><input id="typed-answer" class="typed-input${cls}" type="text" inputmode="numeric" autocomplete="off" maxlength="7" value="${shown}" ${st.locked ? 'disabled' : ''}>
+        <button type="submit" class="btn primary" ${st.locked ? 'disabled' : ''}>Check</button></div>
+        <p class="typed-note">Expert level has no options to choose from.</p></form>`;
+    } else {
+      let opts = '';
+      p.options.forEach((o, i) => {
+        let cls = 'opt';
+        if (st.reveal) { if (i === p.answer) cls += ' is-correct'; else if (i === st.chosen) cls += ' is-wrong'; }
+        else if (i === st.chosen) cls += ' is-chosen';
+        opts += `<button type="button" class="${cls}" data-opt="${i}" ${st.locked ? 'disabled' : ''} aria-label="Option ${LETTERS[i]}"><span class="opt-letter">${LETTERS[i]}</span>${cellSVG(p, o)}</button>`;
+      });
+      answerUI = `<p class="label">${ask}</p><div class="opts${p.options.length === 5 ? ' opts-5' : ''}">${opts}</div>`;
+    }
+    return `<div class="board${strip ? ' board-strip' : ''}"${style} role="img" aria-label="${aria}">${board}</div>
+      <div class="opts-wrap">${answerUI}</div>`;
+  }
+  const answerName = (p) => (p.typed ? String(p.value) : LETTERS[p.answer]);
+  function explainHTML(p) {
+    if (p.eng === 'logic') return `<div class="explain lg-explain"><p class="label">Logic of this puzzle</p>${logicExplain(p)}
+      <p class="explain-answer">Correct answer: <b>${answerName(p)}</b></p></div>`;
+    if (p.eng === 'shapes') return `<div class="explain"><p class="label">Logic of this puzzle</p><p>${esc(p.explain)}</p>
+      <p class="explain-answer">Correct answer: <b>${answerName(p)}</b></p></div>`;
+    return `<div class="explain"><p class="label">Logic of this puzzle · ${p.title}</p><ol>${p.explain.map((l) => '<li>' + l + '</li>').join('')}</ol>
+      <p class="explain-answer">Correct answer: <b>${answerName(p)}</b></p></div>`;
+  }
+
+  // ---------- practice rooms (Matrices, Numbers) ----------
+  const okLevel = (f) => (f === 'all' || [1, 2, 3, 4, 5].indexOf(f) >= 0 ? f : 'all');
+  const PRACTICE = {
+    matrices: { room: 'matrices', filter: okLevel(store.get('level', 'all')), stats: store.get('stats', { done: 0, right: 0, streak: 0 }), st: null },
+    numbers: { room: 'numbers', filter: okLevel(store.get('level.numbers', 'all')), stats: store.get('stats.numbers', { done: 0, right: 0, streak: 0 }), st: null },
+    shapes: { room: 'shapes', filter: okLevel(store.get('level.shapes', 'all')), stats: store.get('stats.shapes', { done: 0, right: 0, streak: 0 }), st: null },
+    logic: { room: 'logic', filter: okLevel(store.get('level.logic', 'all')), stats: store.get('stats.logic', { done: 0, right: 0, streak: 0 }), st: null }
+  };
+  const statsKey = (T) => (T.room === 'matrices' ? 'stats' : 'stats.' + T.room);
+  const levelKey = (T) => (T.room === 'matrices' ? 'level' : 'level.' + T.room);
+  let T = PRACTICE.matrices;
+  function trainingNext() {
+    const tiers = ENGINES[T.room].TIERS;
+    const tier = T.filter === 'all' ? tiers[Math.floor(Math.random() * tiers.length)] : T.filter;
+    T.st = { puzzle: gen(T.room, newSeed(), tier), chosen: null, reveal: false, explain: false, locked: false };
+    renderTraining();
+  }
+  function renderTraining() {
+    const st = T.st, p = st.puzzle, s = T.stats;
+    const chips = ['all'].concat(ENGINES[T.room].TIERS).map((f) => `<button type="button" class="chip${T.filter === f ? ' on' : ''}" data-filter="${f}" aria-pressed="${T.filter === f}">${f === 'all' ? 'All levels' : TIER_SHORT[f]}</button>`).join('');
+    let verdict = '';
+    if (st.reveal) verdict = st.correct ? '<p class="verdict ok">Correct.</p>' : `<p class="verdict no">Not this time. The answer is ${answerName(p)}.</p>`;
+    $('#view').innerHTML = `
+      <div class="toolbar">
+        <div class="chips" role="group" aria-label="Difficulty">${chips}</div>
+        <dl class="stats"><div><dt>Solved</dt><dd>${s.done}</dd></div><div><dt>Correct</dt><dd>${s.done ? Math.round(100 * s.right / s.done) + '%' : '–'}</dd></div><div><dt>Streak</dt><dd>${s.streak}</dd></div></dl>
+      </div>
+      <form class="findcode" id="find-form" novalidate><label for="find-code">Open a puzzle code</label>
+        <input id="find-code" placeholder="${CODE_PREFIX[T.room]}3-48213" autocomplete="off" spellcheck="false">
+        <button type="submit" class="btn ghost">Open</button></form>
+      <div class="meta"><span class="pill tier-${p.tier}">${TIER_LABEL[p.tier]}</span><span class="code">Puzzle ${code(p)}</span></div>
+      <div class="puzzle">${puzzleHTML(st)}</div>
+      <div class="after">${verdict}
+        <div class="actions">
+          <button type="button" class="btn ghost" id="btn-explain">${st.explain ? 'Hide logic' : 'Explain logic'}</button>
+          <button type="button" class="btn primary" id="btn-next">${st.reveal ? 'Next puzzle' : 'Skip'}</button>
+        </div>
+        ${st.explain ? explainHTML(p) : ''}
+      </div>`;
+  }
+  function trainingAnswer(i, typedValue) {
+    const st = T.st; if (st.locked) return;
+    let ok;
+    if (st.puzzle.typed) { if (typedValue === undefined) return; st.typedValue = typedValue; ok = typedValue === st.puzzle.value; }
+    else { if (i < 0 || i >= st.puzzle.options.length) return; st.chosen = i; ok = i === st.puzzle.answer; }
+    st.reveal = true; st.locked = true; st.correct = ok;
+    if (!st.peeked) { T.stats.done++; if (ok) { T.stats.right++; T.stats.streak++; } else T.stats.streak = 0; store.set(statsKey(T), T.stats); }
+    renderTraining();
+  }
+
+  // ---------- ranked test ----------
+  const R = { phase: 'intro', items: [], idx: 0, left: TEST_SECONDS, timer: null, result: null, confirm: false };
+  function testStart() {
+    R.items = [];
+    TEST_PLAN.forEach(([tier, n]) => { for (let i = 0; i < n; i++) R.items.push({ puzzle: gen('matrices', newSeed(), tier), chosen: null }); });
+    R.idx = 0; R.left = TEST_SECONDS; R.phase = 'run'; R.confirm = false;
+    clearInterval(R.timer);
+    R.timer = setInterval(() => {
+      R.left--;
+      const el = $('#clock'); if (el) { el.textContent = fmt(Math.max(R.left, 0)); el.classList.toggle('low', R.left <= 60); }
+      if (R.left <= 0) testFinish();
+    }, 1000);
+    renderTest();
+  }
+  function testFinish() {
+    clearInterval(R.timer);
+    const by = {}; E.TIERS.forEach((t) => { by[t] = [0, 0]; });
+    let right = 0;
+    R.items.forEach((it) => { const t = it.puzzle.tier; by[t][1]++; if (it.chosen === it.puzzle.answer) { by[t][0]++; right++; } });
+    R.result = { right, total: R.items.length, used: TEST_SECONDS - Math.max(R.left, 0), by, date: new Date().toISOString().slice(0, 10) };
+    const hist = store.get('tests', []); hist.unshift({ right, total: R.items.length, used: R.result.used, date: R.result.date }); store.set('tests', hist.slice(0, 8));
+    R.phase = 'done'; R.idx = 0; renderTest();
+  }
+  function dots(items, idx, review) {
+    return '<div class="dots" role="group" aria-label="Questions">' + items.map((it, i) => {
+      let c = 'dot'; if (i === idx) c += ' cur';
+      if (review) c += it.chosen === it.puzzle.answer ? ' ok' : ' no'; else if (it.chosen !== null) c += ' done';
+      return `<button type="button" class="${c}" data-go="${i}" aria-label="Question ${i + 1}">${i + 1}</button>`;
+    }).join('') + '</div>';
+  }
+  function renderTest() {
+    const v = $('#view');
+    if (R.phase === 'intro') {
+      const hist = store.get('tests', []);
+      v.innerHTML = `<section class="intro">
+        <h2>Ranked test</h2>
+        <p class="lede">Twenty-five new puzzles that get harder as you go. Every test has the same mix of levels, so your scores are comparable from one attempt to the next.</p>
+        <ul class="facts">
+          <li><b>25</b><span>questions: five at each of the five levels</span></li>
+          <li><b>30:00</b><span>minutes in total, shown as a countdown</span></li>
+          <li><b>8</b><span>options per question, one correct</span></li>
+        </ul>
+        <p class="note">You can move between questions and change answers until you finish. Nothing is marked until the end. Your score is the number of correct answers; time used is recorded only to separate equal scores. This is practice for matrix reasoning, not a validated IQ test.</p>
+        <button type="button" class="btn primary big" id="btn-start">Start the test</button>
+        ${hist.length ? `<div class="history"><p class="label">Your recent tests on this device</p><table><thead><tr><th>Date</th><th>Score</th><th>Time used</th></tr></thead><tbody>${hist.map((h) => `<tr><td>${h.date}</td><td>${h.right} / ${h.total || 20}</td><td>${fmt(h.used)}</td></tr>`).join('')}</tbody></table></div>` : ''}
+      </section>`;
+      return;
+    }
+    const it = R.items[R.idx], p = it.puzzle;
+    if (R.phase === 'run') {
+      const answered = R.items.filter((x) => x.chosen !== null).length;
+      v.innerHTML = `
+        <div class="toolbar"><div class="meta"><span class="qnum">Question ${R.idx + 1} of ${R.items.length}</span><span class="code">${answered} answered</span></div>
+          <div class="clock${R.left <= 60 ? ' low' : ''}" id="clock" aria-label="Time remaining">${fmt(Math.max(R.left, 0))}</div></div>
+        ${dots(R.items, R.idx, false)}
+        <div class="puzzle">${puzzleHTML({ puzzle: p, chosen: it.chosen, reveal: false, locked: false })}</div>
+        <div class="after"><div class="actions">
+          <button type="button" class="btn ghost" id="btn-prev" ${R.idx === 0 ? 'disabled' : ''}>Previous</button>
+          ${R.idx < R.items.length - 1 ? '<button type="button" class="btn primary" id="btn-fwd">Next</button>' : ''}
+          <button type="button" class="btn ${R.idx === R.items.length - 1 ? 'primary' : 'ghost'}" id="btn-finish">Finish test</button>
+        </div>
+        ${R.confirm ? `<div class="confirm" role="alertdialog" aria-label="Finish test"><p>${R.items.length - answered ? `You have ${R.items.length - answered} unanswered question${R.items.length - answered > 1 ? 's' : ''}. ` : ''}Finish and see your result?</p><div class="actions"><button type="button" class="btn ghost" id="btn-cancel">Keep going</button><button type="button" class="btn primary" id="btn-confirm">Finish now</button></div></div>` : ''}
+        </div>`;
+      return;
+    }
+    const r = R.result;
+    v.innerHTML = `<section class="result">
+        <div class="score"><span class="score-num">${r.right}</span><span class="score-of">/ ${r.total}</span></div>
+        <div class="result-side">
+          <h2>Test complete</h2>
+          <p class="lede">Time used ${fmt(r.used)} of 30:00.</p>
+          <div class="bars">${E.TIERS.map((t) => `<div class="bar-row"><span>${TIER_SHORT[t]}</span><div class="bar"><i class="tier-${t}" style="width:${100 * r.by[t][0] / r.by[t][1]}%"></i></div><b>${r.by[t][0]} / ${r.by[t][1]}</b></div>`).join('')}</div>
+          <button type="button" class="btn primary" id="btn-start">Take another test</button>
+        </div>
+      </section>
+      <h3 class="review-title">Review your answers</h3>
+      ${dots(R.items, R.idx, true)}
+      <div class="meta"><span class="qnum">Question ${R.idx + 1}</span><span class="pill tier-${p.tier}">${TIER_LABEL[p.tier]}</span><span class="code">Puzzle ${code(p)}</span>
+        <span class="verdict-inline ${it.chosen === p.answer ? 'ok' : 'no'}">${it.chosen === null ? 'Not answered' : it.chosen === p.answer ? 'Correct' : 'You chose ' + LETTERS[it.chosen]}</span></div>
+      <div class="puzzle">${puzzleHTML({ puzzle: p, chosen: it.chosen, reveal: true, locked: true, explain: true })}</div>
+      <div class="after">${explainHTML(p)}
+        <div class="actions"><button type="button" class="btn ghost" id="btn-prev" ${R.idx === 0 ? 'disabled' : ''}>Previous</button><button type="button" class="btn ghost" id="btn-fwd" ${R.idx === R.items.length - 1 ? 'disabled' : ''}>Next</button></div></div>`;
+  }
+
+  // ---------- daily five ----------
+  const DAY0 = Date.UTC(2026, 10, 12);
+  const dkey = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  function today() {
+    const d = new Date();
+    return { key: dkey(d), prev: dkey(new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1)),
+      num: Math.floor((Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - DAY0) / 86400000) + 1,
+      label: d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) };
+  }
+  const D = { day: null, items: [], idx: 0, phase: 'intro', used: 0, since: 0, frozen: true, timer: null, explain: false, copied: '' };
+  function dailyLoad() {
+    const t = today(); if (D.day && D.day.key === t.key) return;
+    clearInterval(D.timer);
+    D.day = t; D.idx = 0; D.phase = 'intro'; D.used = 0; D.frozen = true; D.explain = false; D.copied = '';
+    const base = Number(t.key.replace(/-/g, ''));
+    D.items = E.TIERS.map((tier) => ({ puzzle: gen('matrices', base * 7 + tier, tier), chosen: null }));
+    const sv = store.get('daily', null);
+    if (sv && sv.date === t.key && sv.v === E.VERSION && Array.isArray(sv.chosen)) {
+      sv.chosen.forEach((c, i) => { if (D.items[i] && c !== null && c >= 0 && c < 8) D.items[i].chosen = c; });
+      D.used = sv.used || 0;
+      const n = D.items.findIndex((it) => it.chosen === null);
+      if (n < 0) D.phase = 'done'; else D.idx = n;
+    }
+  }
+  const dailyElapsed = () => D.used + (D.frozen ? 0 : Math.floor((Date.now() - D.since) / 1000));
+  const dailyRight = () => D.items.filter((it) => it.chosen === it.puzzle.answer).length;
+  const dailyStreak = () => { const s = store.get('streak', { last: '', n: 0 }); return s.last === D.day.key || s.last === D.day.prev ? s.n : 0; };
+  function dailySave() { store.set('daily', { date: D.day.key, v: E.VERSION, chosen: D.items.map((it) => it.chosen), used: dailyElapsed() }); }
+  function dailyStart() {
+    D.phase = 'run'; D.since = Date.now(); D.frozen = false; clearInterval(D.timer);
+    D.timer = setInterval(() => { const el = $('#dclock'); if (el) el.textContent = fmt(dailyElapsed()); }, 1000);
+    renderDaily();
+  }
+  function dailyAnswer(i) {
+    const it = D.items[D.idx]; if (D.phase !== 'run' || it.chosen !== null) return;
+    it.chosen = i; D.explain = false;
+    if (D.items.every((x) => x.chosen !== null)) {
+      D.used = dailyElapsed(); D.frozen = true; clearInterval(D.timer);
+      const s = store.get('streak', { last: '', n: 0 });
+      if (s.last !== D.day.key) store.set('streak', { last: D.day.key, n: s.last === D.day.prev ? s.n + 1 : 1 });
+    }
+    dailySave(); renderDaily();
+  }
+  function shareText() {
+    return `MentalSpa Daily #${D.day.num} · ${dailyRight()}/5 · ${fmt(D.used)}\n` + D.items.map((it) => it.chosen === it.puzzle.answer ? '\u{1F7E9}' : '⬛').join('') + '\nmentalspa.club';
+  }
+  function renderDaily() {
+    const v = $('#view');
+    if (D.phase === 'intro') {
+      const started = D.items.some((it) => it.chosen !== null);
+      v.innerHTML = `<section class="intro">
+        <h2>Daily five</h2>
+        <p class="lede">Five puzzles, one from each level, the same for everyone today. It takes about five minutes. Each answer is final, and the clock only counts up, so there is no rush.</p>
+        <ul class="facts">
+          <li><b>#${D.day.num}</b><span>${D.day.label}</span></li>
+          <li><b>5</b><span>puzzles, from level 1 to level 5</span></li>
+          <li><b>${dailyStreak()}</b><span>day streak on this device</span></li>
+        </ul>
+        <button type="button" class="btn primary big" id="btn-dstart">${started ? 'Continue today’s five' : 'Start today’s five'}</button>
+      </section>`;
+      return;
+    }
+    const it = D.items[D.idx], p = it.puzzle;
+    if (D.phase === 'run') {
+      const done = it.chosen !== null, last = D.items.every((x) => x.chosen !== null);
+      v.innerHTML = `
+        <div class="toolbar"><div class="meta"><span class="qnum">Puzzle ${D.idx + 1} of 5</span><span class="pill tier-${p.tier}">${TIER_LABEL[p.tier]}</span></div>
+          <div class="clock" id="dclock" aria-label="Time elapsed">${fmt(dailyElapsed())}</div></div>
+        <div class="puzzle">${puzzleHTML({ puzzle: p, chosen: it.chosen, reveal: done, locked: done, explain: D.explain })}</div>
+        <div class="after">${done ? `${it.chosen === p.answer ? '<p class="verdict ok">Correct.</p>' : `<p class="verdict no">Not this time. The answer is ${LETTERS[p.answer]}.</p>`}
+          <div class="actions"><button type="button" class="btn ghost" id="btn-dexplain">${D.explain ? 'Hide logic' : 'Explain logic'}</button>
+          <button type="button" class="btn primary" id="btn-dnext">${last ? 'See my result' : 'Next puzzle'}</button></div>${D.explain ? explainHTML(p) : ''}` : ''}
+        </div>`;
+      return;
+    }
+    v.innerHTML = `<section class="result">
+        <div class="score"><span class="score-num">${dailyRight()}</span><span class="score-of">/ 5</span></div>
+        <div class="result-side">
+          <h2>Daily #${D.day.num} complete</h2>
+          <p class="lede">Time ${fmt(D.used)}. Streak: ${dailyStreak()} day${dailyStreak() === 1 ? '' : 's'}. A new set arrives at midnight.</p>
+          <pre class="share" id="share-text">${shareText()}</pre>
+          <div class="actions"><button type="button" class="btn primary" id="btn-share">Copy my result</button>${D.copied ? `<span class="copied" role="status">${D.copied}</span>` : ''}</div>
+        </div>
+      </section>
+      <h3 class="review-title">Review today's puzzles</h3>
+      ${dots(D.items, D.idx, true)}
+      <div class="meta"><span class="qnum">Puzzle ${D.idx + 1}</span><span class="pill tier-${p.tier}">${TIER_LABEL[p.tier]}</span>
+        <span class="verdict-inline ${it.chosen === p.answer ? 'ok' : 'no'}">${it.chosen === p.answer ? 'Correct' : 'You chose ' + LETTERS[it.chosen]}</span></div>
+      <div class="puzzle">${puzzleHTML({ puzzle: p, chosen: it.chosen, reveal: true, locked: true, explain: true })}</div>
+      <div class="after">${explainHTML(p)}</div>`;
+  }
+
+  // ---------- home ----------
+  // ---------- home ----------
+  const TILE = {
+    breathe: '<circle cx="100" cy="55" r="46" fill="none" stroke="#2c3550" stroke-width="1"/><circle cx="100" cy="55" r="38" fill="none" stroke="#3a4668" stroke-width="1"/><circle cx="100" cy="55" r="28" fill="url(#tile-orb)"/>',
+    meditate: '<g stroke="#e0b25c" stroke-width="3" stroke-linecap="round"><path d="M70 72h60M60 82h80M78 62h44" opacity=".5"/></g><path d="M72 72a28 28 0 0 1 56 0z" fill="#e0b25c"/>',
+    garden: '<g stroke="#2f8f72" stroke-width="3" fill="none" stroke-linecap="round"><path d="M78 92V62M100 92V52M122 92V66"/><path d="M78 74c-8 0-12-5-12-9 6-2 12 2 12 9zM100 66c8 0 12-5 12-9-6-2-12 2-12 9z"/></g><circle cx="78" cy="58" r="8" fill="#e8b84b"/><circle cx="100" cy="47" r="9" fill="#e4705e"/><circle cx="122" cy="62" r="7" fill="#cfe8dd" stroke="#2f8f72" stroke-width="2"/>',
+    shapes: '<g transform="translate(24,40)"><rect x="0" y="3" width="26" height="26" rx="3" fill="none" stroke="#1e293b" stroke-width="3"/><text x="33" y="23" font-size="16" fill="#94a3b8">\u2192</text><path d="M70 16l14-15 14 15-14 15z" fill="#0f766e"/><path d="M104 31l14-26 14 26z" fill="none" stroke="#1e293b" stroke-width="3"/><text x="139" y="23" font-size="16" fill="#94a3b8">\u2192</text><text x="158" y="27" font-size="23" font-weight="700" fill="#0f766e">?</text></g>',
+    logic: '<g transform="translate(100,55)"><circle cx="-14" cy="0" r="27" fill="#a9ccc0" fill-opacity=".85" stroke="#1e293b" stroke-width="2.5"/><circle cx="14" cy="0" r="27" fill="#e8cf9a" fill-opacity=".7" stroke="#1e293b" stroke-width="2.5"/></g>'
+  };
+  const art = (inner, dark) => `<div class="tile-art"><svg viewBox="0 0 200 110" aria-hidden="true">${dark ? '<defs><radialGradient id="tile-orb" cx="38%" cy="34%" r="70%"><stop offset="0" stop-color="#9fb4d6"/><stop offset="0.45" stop-color="#4c5f85"/><stop offset="1" stop-color="#161b2b"/></radialGradient></defs>' : ''}${inner}</svg></div>`;
+  const tile = (href, cls, inner, title, text) =>
+    (href ? `<a class="tile ${cls}" href="#${href}">` : `<div class="tile ${cls} tile-soon">`)
+    + art(inner, cls === 'tile-dark') + `<div class="tile-text"><h2>${title}</h2><p>${text}</p>${href ? '' : '<span class="soon">Not built yet</span>'}</div>`
+    + (href ? '</a>' : '</div>');
+  const groupHTML = (name, note, tiles) =>
+    `<section class="group"><div class="group-head"><h2>${name}</h2><p>${note}</p></div><div class="tiles">${tiles}</div></section>`;
+
+  function renderHome() {
+    dailyLoad();
+    const dDone = D.phase === 'done', started = D.items.some((it) => it.chosen !== null);
+    const demo = gen('matrices', 12, 2);
+    let mini = '';
+    for (let i = 0; i < 9; i++) mini += i < 8 ? `<g transform="translate(${(i % 3) * 34},${Math.floor(i / 3) * 34}) scale(0.3)"><rect width="100" height="100" rx="8" fill="#fff" stroke="#dde3ea" stroke-width="3"/>${E.renderCell(demo.cells[i])}</g>`
+      : '<g transform="translate(68,68)"><rect width="30" height="30" rx="2.4" fill="#f5f7fa" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="3 2"/><text x="15" y="21" text-anchor="middle" font-size="16" font-weight="800" fill="#94a3b8" font-family="sans-serif">?</text></g>';
+    const sq = D.items.map((it, i) => `<rect x="${i * 26}" y="0" width="22" height="22" rx="4" fill="${dDone ? (it.chosen === it.puzzle.answer ? '#22a35a' : '#1e293b') : '#e2e8f0'}"/>`).join('');
+    const lv = ['#22a35a', '#1b9aaa', '#d99a1c', '#e0662f', '#8b45d6'];
+    let bars = ''; for (let i = 0; i < 25; i++) bars += `<rect x="${i * 7.2}" y="${20 - Math.floor(i / 5) * 3}" width="5" height="${10 + Math.floor(i / 5) * 3}" rx="1.5" fill="${lv[Math.floor(i / 5)]}"/>`;
+    const streak = dailyStreak();
+    const state = dDone ? `Daily #${D.day.num} \u00b7 done, ${dailyRight()} / 5` : started ? `Daily #${D.day.num} \u00b7 in progress` : `Daily #${D.day.num} \u00b7 not done yet`;
+    const when = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+
+    $('#view').innerHTML = `<section class="home">
+      <p class="home-lede">Pick a room. Some slow you down, some wake you up. No account needed.${streak ? ` <b>${streak} day streak.</b>` : ''}</p>
+      <section class="ritual">
+        <div class="ritual-art"><svg viewBox="0 0 110 110" width="94" height="94" aria-hidden="true"><defs><radialGradient id="ritual-orb" cx="38%" cy="34%" r="70%"><stop offset="0" stop-color="#bfe3d6"/><stop offset="0.5" stop-color="#4f9c86"/><stop offset="1" stop-color="#17352d"/></radialGradient></defs><circle cx="55" cy="55" r="48" fill="none" stroke="#2b4a42" stroke-width="1.5"/><circle cx="55" cy="55" r="38" fill="none" stroke="#35584f" stroke-width="1.5"/><circle cx="55" cy="55" r="27" fill="url(#ritual-orb)"/></svg></div>
+        <div class="ritual-body">
+          <p class="kicker">Today's ritual \u00b7 ${when}</p>
+          <h2>One minute of breathing, then the Daily Five</h2>
+          <p>Settle first, think second. About six minutes in total.</p>
+          <div class="ritual-go"><a class="btn primary" href="#ritual">${dDone ? 'Breathe again' : 'Begin today\u2019s ritual'}</a><span class="ritual-state">${state}</span></div>
+        </div>
+      </section>
+      ${groupHTML('Calm', 'Rooms for slowing down.',
+        tile('breathe', 'tile-dark', TILE.breathe, 'Breathe', 'Guided breathing with box, 4-7-8 and coherent patterns.')
+        + tile('', 'tile-dark', TILE.meditate, 'Meditate', 'A quiet timer with a soft bell at the start and the end.')
+        + tile('', 'tile-dark', TILE.garden, 'Garden', 'Flowers that grow while you slow down. Nothing to win.'))}
+      ${groupHTML('Practice', 'No clock, no score. Pick a level and see the logic explained.',
+        tile('matrices', '', `<g transform="translate(51,6)">${mini}</g>`, 'Matrices', 'Find the missing piece of a 3 by 3 pattern, at five levels.')
+        + tile('shapes', '', TILE.shapes, 'Shapes', 'Visual analogies, series and odd one out.')
+        + tile('numbers', '', '<text x="100" y="70" text-anchor="middle" font-family="JetBrains Mono, ui-monospace, monospace" font-size="27" font-weight="700" fill="#1e293b" letter-spacing="1">2 6 12 20 <tspan fill="#0f766e">?</tspan></text>', 'Numbers', 'Number sequences and number grids.')
+        + tile('logic', '', TILE.logic, 'Logic', 'Short deductions: what must be true?'))}
+      ${groupHTML('Challenge', 'Fixed sets, scored, with a result at the end.',
+        tile('daily', '', `<g transform="translate(37,44)">${sq}</g>`, 'Daily Five', dDone ? `Today's result: ${dailyRight()} / 5. A new set arrives at midnight.` : 'Five puzzles, the same for everyone today. About five minutes.')
+        + tile('test', '', `<g transform="translate(11,34)">${bars}</g>`, 'Ranked Test', 'Twenty-five matrices in thirty minutes, easy to expert.'))}
+    </section>`;
+  }
+
+  // ---------- breathe (prototype stand-in for the full breathing app) ----------
+  const B_PATTERNS = { box: ['Box', [4, 4, 4, 4]], calm: ['4-7-8', [4, 7, 8, 0]], coherent: ['Coherent', [5, 0, 5, 0]] };
+  const B_PHASE = ['Breathe in', 'Hold', 'Breathe out', 'Hold'];
+  const B = { pattern: 'box', rounds: 6, running: false, done: false, start: 0, raf: 0 };
+  function breatheStop() { cancelAnimationFrame(B.raf); B.running = false; }
+  function breatheTick() {
+    const durs = B_PATTERNS[B.pattern][1], cycle = durs.reduce((s, x) => s + x, 0);
+    const t = (performance.now() - B.start) / 1000;
+    const orb = $('#orb'), lab = $('#b-phase'), cnt = $('#b-count'), rnd = $('#b-round');
+    if (!orb) { breatheStop(); return; }
+    if (t >= cycle * B.rounds) { breatheStop(); B.done = true; renderBreathe(); return; }
+    let u = t % cycle, ph = 0;
+    while (u >= durs[ph]) { u -= durs[ph]; ph++; }
+    const f = durs[ph] ? u / durs[ph] : 1, ease = 0.5 - 0.5 * Math.cos(Math.PI * f);
+    const scale = ph === 0 ? 0.55 + 0.45 * ease : ph === 1 ? 1 : ph === 2 ? 1 - 0.45 * ease : 0.55;
+    orb.style.transform = 'scale(' + scale.toFixed(4) + ')';
+    lab.textContent = B_PHASE[ph]; cnt.textContent = Math.ceil(durs[ph] - u);
+    rnd.textContent = 'Round ' + (Math.floor(t / cycle) + 1) + ' of ' + B.rounds;
+    B.raf = requestAnimationFrame(breatheTick);
+  }
+  function renderBreathe() {
+    const durs = B_PATTERNS[B.pattern][1], total = durs.reduce((s, x) => s + x, 0) * B.rounds;
+    const pc = Object.keys(B_PATTERNS).map((k) => `<button type="button" class="chip${B.pattern === k ? ' on' : ''}" data-bp="${k}" aria-pressed="${B.pattern === k}">${B_PATTERNS[k][0]}</button>`).join('');
+    const rc = [4, 6, 10].map((n) => `<button type="button" class="chip${B.rounds === n ? ' on' : ''}" data-br="${n}" aria-pressed="${B.rounds === n}">${n} rounds</button>`).join('');
+    $('#view').innerHTML = `
+      <div class="stage"><div class="orb" id="orb"></div>
+        <p class="b-phase" id="b-phase">${B.done ? 'Session complete' : B.running ? '' : 'Ready when you are'}</p>
+        <p class="b-count" id="b-count">${B.done || !B.running ? '' : ''}</p>
+        <p class="b-round" id="b-round">${B.running ? '' : B_PATTERNS[B.pattern][0] + ' · ' + durs.filter((x) => x).join('-') + ' · ' + fmt(total)}</p></div>
+      <div class="toolbar"><div class="chips" role="group" aria-label="Pattern">${pc}</div><div class="chips" role="group" aria-label="Length">${rc}</div></div>
+      <div class="actions"><button type="button" class="btn primary" id="btn-bstart">${B.running ? 'Stop' : B.done ? 'Breathe again' : 'Start breathing'}</button>${B.done && B.ritual ? '<a class="btn" href="#daily">Now the Daily Five \u2192</a>' : ''}</div>
+      <p class="note">Preview room for the prototype. The finished site will use the full breathing app, with its sound and custom patterns.</p>`;
+  }
+
+  // ---------- routing and events ----------
+  let mode = 'home';
+  const ROOMS = { home: '', breathe: 'Breathe', daily: 'Daily Five', matrices: 'Matrices', numbers: 'Numbers', shapes: 'Shapes', logic: 'Logic', test: 'Ranked Test' };
+  function show() {
+    let h = location.hash.replace('#', '');
+    if (h === 'training') h = 'matrices';
+    B.ritual = h === 'ritual';
+    if (h === 'ritual') h = 'breathe';
+    mode = ROOMS[h] !== undefined ? h : 'home';
+    breatheStop();
+    $('#crumb').innerHTML = mode === 'home' ? '' : `<a class="back" href="#home">\u2190 All rooms</a><span>${ROOMS[mode]}</span>`;
+    if (mode === 'home') renderHome();
+    else if (mode === 'breathe') { B.done = false; renderBreathe(); }
+    else if (PRACTICE[mode]) { T = PRACTICE[mode]; if (!T.st) trainingNext(); else renderTraining(); }
+    else if (mode === 'daily') { dailyLoad(); renderDaily(); }
+    else renderTest();
+    window.scrollTo(0, 0);
+  }
+  window.addEventListener('hashchange', show);
+
+  $('#view').addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    if (ev.target.id === 'find-form') {
+      const box = $('#find-code'), c = parseCode(box.value);
+      if (!c) { box.value = ''; box.placeholder = 'Looks like L3-48213'; return; }
+      T = PRACTICE[c.room];
+      T.st = { puzzle: gen(c.room, c.seed, c.tier), chosen: null, reveal: false, explain: false, locked: false, peeked: true };
+      if (mode !== c.room) { location.hash = '#' + c.room; } else renderTraining();
+      return;
+    }
+    if (ev.target.id !== 'typed-form' || !PRACTICE[mode]) return;
+    const raw = $('#typed-answer').value.trim().replace(/\u2212/g, '-');
+    if (!/^-?\d+$/.test(raw)) { $('#typed-answer').focus(); return; }
+    trainingAnswer(-1, parseInt(raw, 10));
+  });
+  $('#view').addEventListener('click', (ev) => {
+    const b = ev.target.closest('button'); if (!b) return;
+    if (b.dataset.opt !== undefined) {
+      const i = +b.dataset.opt;
+      if (PRACTICE[mode]) trainingAnswer(i);
+      else if (mode === 'daily') dailyAnswer(i);
+      else if (R.phase === 'run') { const it = R.items[R.idx]; it.chosen = it.chosen === i ? null : i; R.confirm = false; renderTest(); }
+      return;
+    }
+    if (b.dataset.bp) { breatheStop(); B.done = false; B.pattern = b.dataset.bp; renderBreathe(); return; }
+    if (b.dataset.br) { breatheStop(); B.done = false; B.rounds = +b.dataset.br; renderBreathe(); return; }
+    if (b.dataset.filter) { T.filter = b.dataset.filter === 'all' ? 'all' : +b.dataset.filter; store.set(levelKey(T), T.filter); trainingNext(); return; }
+    if (b.dataset.go !== undefined) { if (mode === 'daily') { D.idx = +b.dataset.go; renderDaily(); } else { R.idx = +b.dataset.go; R.confirm = false; renderTest(); } return; }
+    switch (b.id) {
+      case 'btn-next': trainingNext(); break;
+      case 'btn-explain': T.st.explain = !T.st.explain; if (!T.st.reveal) T.st.peeked = true; renderTraining(); break;
+      case 'btn-start': testStart(); break;
+      case 'btn-prev': if (R.idx > 0) { R.idx--; R.confirm = false; renderTest(); } break;
+      case 'btn-fwd': if (R.idx < R.items.length - 1) { R.idx++; R.confirm = false; renderTest(); } break;
+      case 'btn-finish': R.confirm = true; renderTest(); break;
+      case 'btn-cancel': R.confirm = false; renderTest(); break;
+      case 'btn-confirm': testFinish(); break;
+      case 'btn-bstart':
+        if (B.running) { breatheStop(); renderBreathe(); } else { B.running = true; B.done = false; B.start = performance.now(); renderBreathe(); breatheTick(); }
+        break;
+      case 'btn-dstart': dailyStart(); break;
+      case 'btn-dexplain': D.explain = !D.explain; renderDaily(); break;
+      case 'btn-dnext':
+        if (D.items.every((x) => x.chosen !== null)) { D.phase = 'done'; D.idx = 0; } else { D.idx = D.items.findIndex((x) => x.chosen === null); D.explain = false; }
+        renderDaily(); break;
+      case 'btn-share': {
+        const txt = shareText();
+        const fail = () => { D.copied = 'Copying is blocked here. Select the text above and copy it.'; renderDaily(); };
+        try { navigator.clipboard.writeText(txt).then(() => { D.copied = 'Copied. Paste it into any chat.'; renderDaily(); }, fail); } catch (e) { fail(); }
+        break;
+      }
+    }
+  });
+  document.addEventListener('keydown', (ev) => {
+    if (ev.metaKey || ev.ctrlKey || ev.altKey) return;
+    const tag = ev.target && ev.target.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+    const k = ev.key.toUpperCase();
+    let i = LETTERS.indexOf(k); if (k.length === 1 && k >= '1' && k <= '8') i = +k - 1;
+    if (i >= 0 && k.length === 1) {
+      if (PRACTICE[mode]) { if (!T.st.puzzle.typed) trainingAnswer(i); }
+      else if (mode === 'daily') dailyAnswer(i);
+      else if (mode === 'test' && R.phase === 'run') { R.items[R.idx].chosen = i; renderTest(); }
+    } else if (ev.key === 'Enter' && PRACTICE[mode] && T.st && T.st.reveal && !(document.activeElement && document.activeElement.tagName === 'BUTTON')) trainingNext();
+    else if (ev.key === 'ArrowRight' && mode === 'test' && R.phase !== 'intro' && R.idx < R.items.length - 1) { R.idx++; renderTest(); }
+    else if (ev.key === 'ArrowLeft' && mode === 'test' && R.phase !== 'intro' && R.idx > 0) { R.idx--; renderTest(); }
+  });
+  show();
+})();
+</script>
 </body>
 </html>

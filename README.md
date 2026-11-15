@@ -22,7 +22,6 @@ Plain HTML and JavaScript, no build step. Vercel serves the files as they are.
 | `shapes.js` | Shapes engine (codes `S3-48213`) |
 | `logic.js` | Logic engine (codes `D3-48213`) |
 | `tools/` | Independent checkers that re-solve thousands of puzzles |
-| `rooms/mirror/` | The Floral Mirror from the March 2026 version, kept at its old address and not linked from the home page |
 
 The engines have no page code in them and also run in Node, so they can be checked from the command line:
 

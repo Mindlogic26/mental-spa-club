@@ -770,7 +770,21 @@ footer p { margin: 0; max-width: 75ch; }
   // ---------- meditate ----------
   // The bells are scheduled on the audio clock, not on a page timer, so the closing bell still rings
   // on time when the tab is in the background and animation frames have stopped.
-  const M = { mins: store.get('med.mins', 5), bell: store.get('med.bell', true), running: false, done: false, end: 0, timer: 0, ctx: null, nodes: [] };
+  const M = { mins: store.get('med.mins', 5), bell: store.get('med.bell', true), running: false, done: false, end: 0, timer: 0, ctx: null, nodes: [], lock: null, locked: false };
+  // A phone that locks its screen suspends the page, and the closing bell would never ring. Ask the
+  // device to stay awake while someone is sitting. Not every browser allows it, so it is a request,
+  // not a promise: the room says which of the two it got.
+  function medWake(on) {
+    if (!on) { if (M.lock) { try { M.lock.release(); } catch (e) {} M.lock = null; } M.locked = false; return; }
+    if (!navigator.wakeLock) { M.locked = false; return; }
+    navigator.wakeLock.request('screen').then((l) => {
+      M.lock = l; M.locked = true;
+      l.addEventListener('release', () => { M.lock = null; M.locked = false; });
+      if (M.running) renderMeditate();
+    }, () => { M.locked = false; });
+  }
+  // the lock is dropped whenever the page is hidden, so take it again on the way back
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && M.running && !M.lock) medWake(true); });
   const MED_MINS = [3, 5, 10, 20];
   function medBell(ctx, at, soft) {
     // a bowl-like tone: a few partials, soft attack, long decay
@@ -789,6 +803,7 @@ footer p { margin: 0; max-width: 75ch; }
   }
   function medStop(finished) {
     clearInterval(M.timer); M.timer = 0; M.running = false;
+    medWake(false);
     if (!finished) { M.nodes.forEach((o) => { try { o.stop(); } catch (e) {} }); }
     M.nodes = [];
     renderMeditate();
@@ -809,6 +824,7 @@ footer p { margin: 0; max-width: 75ch; }
       } catch (e) { /* no sound available: the timer still works */ }
     }
     M.timer = setInterval(medTick, 250);
+    medWake(true);
     renderMeditate();
     const b = $('#btn-mstart'); if (b) b.focus();
   }
@@ -833,12 +849,15 @@ footer p { margin: 0; max-width: 75ch; }
           <p class="med-time" id="med-time" role="timer" aria-live="off">${fmt(left)}</p>
         </div>
         <p class="b-phase">${M.done ? 'Session complete' : M.running ? '' : 'Sit comfortably'}</p>
-        <p class="b-round">${M.running ? 'Close your eyes if you like. The bell will tell you when it is over.' : M.done ? `${M.mins} minutes. Come back whenever you need to.` : 'A quiet timer. Nothing to follow, nothing to score.'}</p>
+        <p class="b-round">${M.running ? (M.bell ? 'Close your eyes if you like. The bell will tell you when it is over.' : 'Close your eyes if you like.') : M.done ? `${M.mins} minutes. Come back whenever you need to.` : 'A quiet timer. Nothing to follow, nothing to score.'}</p>
       </div>
       <div class="toolbar"><div class="chips" role="group" aria-label="Length">${mc}</div>
         <div class="chips"><button type="button" class="chip${M.bell ? ' on' : ''}" id="btn-mbell" aria-pressed="${M.bell}">${M.bell ? 'Bell on' : 'Bell off'}</button></div></div>
       <div class="actions"><button type="button" class="btn primary" id="btn-mstart">${M.running ? 'Stop' : M.done ? 'Sit again' : 'Begin'}</button></div>
-      <p class="note">The bell is made by the page itself, so it works offline. Set your device to stay awake if you are sitting for a while.</p>`;
+      <p class="note">${M.running
+        ? (M.locked ? 'Keeping the screen on so the closing bell can ring.'
+          : 'This browser will not let the page keep the screen on. If the screen goes dark the closing bell may not ring, so leave the page open, or set a longer screen timeout.')
+        : 'The bell is made by the page itself, so it works offline. While you sit, the page asks your device to keep the screen on, because a phone that locks itself silences the closing bell.'}</p>`;
   }
 
   // ---------- routing and events ----------

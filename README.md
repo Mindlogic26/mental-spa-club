@@ -4,7 +4,7 @@ A quiet place to breathe, focus and train your mind. Live at https://mentalspa.c
 
 Rooms in three groups:
 
-- **Calm:** Breathe, Meditate (not built yet), Garden (not built yet)
+- **Calm:** Breathe, Meditate, Garden (not built yet)
 - **Practice:** Matrices, Shapes, Numbers, Logic. No clock, no score, logic explained.
 - **Challenge:** Daily Five, Ranked Test
 

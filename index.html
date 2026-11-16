@@ -256,6 +256,19 @@ footer p { margin: 0; max-width: 75ch; }
   .board-shapes .cell { width: clamp(62px, 19vw, 96px); }
 }
 
+/* ---- meditate ---- */
+.med-ring { position: relative; width: clamp(200px, 56vw, 250px); aspect-ratio: 1; margin-bottom: 18px; }
+.med-ring svg { width: 100%; height: 100%; display: block; transform: rotate(-90deg); }
+.med-ring .track { fill: none; stroke: rgba(150, 180, 220, 0.16); stroke-width: 5; }
+.med-ring .run { fill: none; stroke: #93b4d8; stroke-width: 5; stroke-linecap: round; }
+.med-glow { position: absolute; inset: 16%; border-radius: 50%;
+  background: radial-gradient(circle at 38% 34%, rgba(169, 188, 220, 0.5) 0%, rgba(91, 111, 151, 0.33) 38%, rgba(20, 26, 43, 0) 72%);
+  animation: med-breathe 14s ease-in-out infinite; }
+@keyframes med-breathe { 0%, 100% { transform: scale(0.93); opacity: 0.75; } 50% { transform: scale(1.06); opacity: 1; } }
+.med-time { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--font-num);
+  font-size: clamp(2rem, 9vw, 2.5rem); font-weight: 700; color: #e8eef7; font-variant-numeric: tabular-nums; }
+@media (prefers-reduced-motion: reduce) { .med-glow { animation: none; } }
+
 </style>
 </head>
 <body>
@@ -707,7 +720,7 @@ footer p { margin: 0; max-width: 75ch; }
       </section>
       ${groupHTML('Calm', 'Rooms for slowing down.',
         tile('breathe', 'tile-dark', TILE.breathe, 'Breathe', 'Guided breathing with box, 4-7-8 and coherent patterns.')
-        + tile('', 'tile-dark', TILE.meditate, 'Meditate', 'A quiet timer with a soft bell at the start and the end.')
+        + tile('meditate', 'tile-dark', TILE.meditate, 'Meditate', 'A quiet timer with a soft bell at the start and the end.')
         + tile('', 'tile-dark', TILE.garden, 'Garden', 'Flowers that grow while you slow down. Nothing to win.'))}
       ${groupHTML('Practice', 'No clock, no score. Pick a level and see the logic explained.',
         tile('matrices', '', `<g transform="translate(51,6)">${mini}</g>`, 'Matrices', 'Find the missing piece of a 3 by 3 pattern, at five levels.')
@@ -754,9 +767,83 @@ footer p { margin: 0; max-width: 75ch; }
       <p class="note">Preview room for the prototype. The finished site will use the full breathing app, with its sound and custom patterns.</p>`;
   }
 
+  // ---------- meditate ----------
+  // The bells are scheduled on the audio clock, not on a page timer, so the closing bell still rings
+  // on time when the tab is in the background and animation frames have stopped.
+  const M = { mins: store.get('med.mins', 5), bell: store.get('med.bell', true), running: false, done: false, end: 0, timer: 0, ctx: null, nodes: [] };
+  const MED_MINS = [3, 5, 10, 20];
+  function medBell(ctx, at, soft) {
+    // a bowl-like tone: a few partials, soft attack, long decay
+    [[1, 1], [2.76, 0.45], [5.4, 0.2], [8.93, 0.08]].forEach(([ratio, level], i) => {
+      const osc = ctx.createOscillator(), gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = 396 * ratio * (1 + (i % 2 ? 0.0015 : -0.0015));
+      const peak = level * (soft ? 0.16 : 0.22), decay = 4.5 / (1 + i * 0.7);
+      gain.gain.setValueAtTime(0, at);
+      gain.gain.linearRampToValueAtTime(peak, at + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, at + decay);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(at); osc.stop(at + decay + 0.1);
+      M.nodes.push(osc);
+    });
+  }
+  function medStop(finished) {
+    clearInterval(M.timer); M.timer = 0; M.running = false;
+    if (!finished) { M.nodes.forEach((o) => { try { o.stop(); } catch (e) {} }); }
+    M.nodes = [];
+    renderMeditate();
+  }
+  function medStart() {
+    const secs = M.mins * 60;
+    M.end = Date.now() + secs * 1000; M.running = true; M.done = false; M.nodes = [];
+    if (M.bell) {
+      try {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (AC) {
+          if (!M.ctx) M.ctx = new AC();
+          if (M.ctx.state === 'suspended') M.ctx.resume();
+          const now = M.ctx.currentTime;
+          medBell(M.ctx, now + 0.05, true);          // opening bell, quieter
+          medBell(M.ctx, now + 0.05 + secs, false);  // closing bell, scheduled on the audio clock
+        }
+      } catch (e) { /* no sound available: the timer still works */ }
+    }
+    M.timer = setInterval(medTick, 250);
+    renderMeditate();
+    const b = $('#btn-mstart'); if (b) b.focus();
+  }
+  function medTick() {
+    const left = Math.max(0, Math.round((M.end - Date.now()) / 1000));
+    const time = $('#med-time'), run = $('#med-run');
+    if (!time) { medStop(false); return; }
+    time.textContent = fmt(left);
+    if (run) { const C = 2 * Math.PI * 46; run.setAttribute('stroke-dashoffset', String(C * (1 - left / (M.mins * 60)))); }
+    if (left <= 0) { M.done = true; medStop(true); }
+  }
+  function renderMeditate() {
+    const secs = M.mins * 60, left = M.running ? Math.max(0, Math.round((M.end - Date.now()) / 1000)) : secs;
+    const C = 2 * Math.PI * 46, off = C * (1 - left / secs);
+    const mc = MED_MINS.map((n) => `<button type="button" class="chip${M.mins === n ? ' on' : ''}" data-mm="${n}" aria-pressed="${M.mins === n}" ${M.running ? 'disabled' : ''}>${n} min</button>`).join('');
+    $('#view').innerHTML = `
+      <div class="stage">
+        <div class="med-ring">
+          <svg viewBox="0 0 100 100" aria-hidden="true"><circle class="track" cx="50" cy="50" r="46"/>
+            <circle class="run" id="med-run" cx="50" cy="50" r="46" stroke-dasharray="${C.toFixed(2)}" stroke-dashoffset="${off.toFixed(2)}"/></svg>
+          <div class="med-glow"></div>
+          <p class="med-time" id="med-time" role="timer" aria-live="off">${fmt(left)}</p>
+        </div>
+        <p class="b-phase">${M.done ? 'Session complete' : M.running ? '' : 'Sit comfortably'}</p>
+        <p class="b-round">${M.running ? 'Close your eyes if you like. The bell will tell you when it is over.' : M.done ? `${M.mins} minutes. Come back whenever you need to.` : 'A quiet timer. Nothing to follow, nothing to score.'}</p>
+      </div>
+      <div class="toolbar"><div class="chips" role="group" aria-label="Length">${mc}</div>
+        <div class="chips"><button type="button" class="chip${M.bell ? ' on' : ''}" id="btn-mbell" aria-pressed="${M.bell}">${M.bell ? 'Bell on' : 'Bell off'}</button></div></div>
+      <div class="actions"><button type="button" class="btn primary" id="btn-mstart">${M.running ? 'Stop' : M.done ? 'Sit again' : 'Begin'}</button></div>
+      <p class="note">The bell is made by the page itself, so it works offline. Set your device to stay awake if you are sitting for a while.</p>`;
+  }
+
   // ---------- routing and events ----------
   let mode = 'home';
-  const ROOMS = { home: '', breathe: 'Breathe', daily: 'Daily Five', matrices: 'Matrices', numbers: 'Numbers', shapes: 'Shapes', logic: 'Logic', test: 'Ranked Test' };
+  const ROOMS = { home: '', breathe: 'Breathe', meditate: 'Meditate', daily: 'Daily Five', matrices: 'Matrices', numbers: 'Numbers', shapes: 'Shapes', logic: 'Logic', test: 'Ranked Test' };
   function show() {
     let h = location.hash.replace('#', '');
     if (h === 'training') h = 'matrices';
@@ -764,9 +851,11 @@ footer p { margin: 0; max-width: 75ch; }
     if (h === 'ritual') h = 'breathe';
     mode = ROOMS[h] !== undefined ? h : 'home';
     breatheStop();
+    if (mode !== 'meditate' && M.running) medStop(false);
     $('#crumb').innerHTML = mode === 'home' ? '' : `<a class="back" href="#home">\u2190 All rooms</a><span>${ROOMS[mode]}</span>`;
     if (mode === 'home') renderHome();
     else if (mode === 'breathe') { B.done = false; renderBreathe(); }
+    else if (mode === 'meditate') { if (!M.running) M.done = false; renderMeditate(); }
     else if (PRACTICE[mode]) { T = PRACTICE[mode]; if (!T.st) trainingNext(); else renderTraining(); }
     else if (mode === 'daily') { dailyLoad(); renderDaily(); }
     else renderTest();
@@ -801,6 +890,7 @@ footer p { margin: 0; max-width: 75ch; }
     if (b.dataset.bp) { breatheStop(); B.done = false; B.pattern = b.dataset.bp; renderBreathe(); return; }
     if (b.dataset.br) { breatheStop(); B.done = false; B.rounds = +b.dataset.br; renderBreathe(); return; }
     if (b.dataset.filter) { T.filter = b.dataset.filter === 'all' ? 'all' : +b.dataset.filter; store.set(levelKey(T), T.filter); trainingNext(); return; }
+    if (b.dataset.mm !== undefined) { M.mins = +b.dataset.mm; store.set('med.mins', M.mins); M.done = false; renderMeditate(); return; }
     if (b.dataset.go !== undefined) { if (mode === 'daily') { D.idx = +b.dataset.go; renderDaily(); } else { R.idx = +b.dataset.go; R.confirm = false; renderTest(); } return; }
     switch (b.id) {
       case 'btn-next': trainingNext(); break;
@@ -814,6 +904,8 @@ footer p { margin: 0; max-width: 75ch; }
       case 'btn-bstart':
         if (B.running) { breatheStop(); renderBreathe(); } else { B.running = true; B.done = false; B.start = performance.now(); renderBreathe(); breatheTick(); }
         break;
+      case 'btn-mstart': M.running ? medStop(false) : medStart(); break;
+      case 'btn-mbell': M.bell = !M.bell; store.set('med.bell', M.bell); renderMeditate(); break;
       case 'btn-dstart': dailyStart(); break;
       case 'btn-dexplain': D.explain = !D.explain; renderDaily(); break;
       case 'btn-dnext':

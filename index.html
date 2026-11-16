@@ -372,6 +372,10 @@ footer p { margin: 0; max-width: 75ch; }
           + '<td>' + (row.ok ? '\u2713 ' : '\u2715 ') + esc(row.why) + '</td></tr>').join('');
         h += '<div class="lg-scroll"><table>' + head + rows + '</table></div><p class="caption">T = truth-teller, L = liar.</p>';
       }
+      if (b.t === 'match') {
+        h += '<div class="lg-scroll"><table><tr><th>#</th>' + b.people.map((x) => '<th>' + esc(x) + '</th>').join('') + '</tr>'
+          + b.rows.map((row, i) => '<tr><td class="n">' + (i + 1) + '</td>' + row.map((c) => '<td>' + esc(c) + '</td>').join('') + '</tr>').join('') + '</table></div>';
+      }
       if (b.t === 'options') {
         h += '<p class="label">Each option</p><dl>' + b.notes.map((note, i) =>
           '<dt class="' + (i === p.answer ? 'right' : '') + '">' + LETTERS[i] + '</dt><dd>' + esc(note) + '</dd>').join('') + '</dl>';

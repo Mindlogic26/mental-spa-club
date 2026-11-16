@@ -1,7 +1,7 @@
 /* MentalSpa.club — Logic engine.
    Seeded and deterministic: the same code (for example D3-48213) always gives the same puzzle.
-   Three forms: categories (All / No / Some statements), ordering (who is taller, older, faster)
-   and truth and lies (truth-tellers and liars). Every puzzle has five options and exactly one answer.
+   Four forms: categories (All / No / Some statements), ordering (who is taller, older, faster),
+   truth and lies (truth-tellers and liars) and matching (who has what). Every puzzle has five options and exactly one answer.
    Words are invented or neutral on purpose, so nothing can be answered from general knowledge. */
 (function (root) {
   'use strict';
@@ -72,8 +72,8 @@
   };
   let SETS_THEME = 'club';   // decided 15 Nov 2026; 'invented' is the earlier wording, kept as a fallback
 
-  const FORMS = ['sets', 'order', 'truth'];
-  const FORM_NAMES = { sets: 'Categories', order: 'Ordering', truth: 'Truth and lies' };
+  const FORMS = ['sets', 'order', 'truth', 'match'];
+  const FORM_NAMES = { sets: 'Categories', order: 'Ordering', truth: 'Truth and lies', match: 'Matching' };
   const QUESTION = { must: 'Which statement must be true?', cannot: 'Which statement cannot be true?' };
 
   // ---------- choosing the five options ----------
@@ -294,7 +294,7 @@
   };
   // How often each kind of statement is drawn as a wrong option, per form, level and question.
   // Tuned by tune.js so that no kind of option is the answer much more often than one time in five.
-  /*PRIORS*/let PRIORS = {"sets1must":{"wrong":{"all":0.308,"no":0.547,"somenot":0.709,"some":1.691,"isa":2.375,"isnot":6.806},"right":{"all":3.251,"no":1.822,"somenot":1.41,"some":0.59,"isa":0.421,"isnot":0.147}},"order1must":{"wrong":{"ext":2.568,"nxt":0.03,"lt":0.523,"pos":0.449},"right":{"ext":0.389,"nxt":39.062,"lt":1.911,"pos":2.23}},"truth1must":{"wrong":{"is":2.368,"rel":0.238,"both":0.425},"right":{"is":0.423,"rel":4.208,"both":2.353}},"sets2must":{"wrong":{"no":0.592,"somenot":0.828,"some":0.652,"all":0.03,"isnot":8.857,"isa":0.297},"right":{"no":1.689,"somenot":1.205,"some":1.535,"all":39.062,"isnot":0.113,"isa":3.368}},"order2must":{"wrong":{"ext":1.842,"lt":1.076,"pos":0.906,"nxt":0.03},"right":{"ext":0.542,"lt":0.931,"pos":1.103,"nxt":39.062}},"truth2must":{"wrong":{"rel":1.104,"both":0.99,"is":0.963,"count":0.908},"right":{"rel":0.906,"both":1.009,"is":1.039,"count":1.102}},"sets3must":{"wrong":{"some":0.916,"somenot":1.636,"no":0.539,"isnot":3.078,"all":0.207,"isa":0.551},"right":{"some":1.091,"somenot":0.61,"no":1.852,"isnot":0.324,"all":4.853,"isa":1.82}},"order3must":{"wrong":{"ext":1.842,"lt":1.4,"pos":0.373,"nxt":0.074},"right":{"ext":0.544,"lt":0.716,"pos":2.684,"nxt":13.35}},"truth3must":{"wrong":{"is":1.026,"rel":1.432,"both":0.755,"count":0.721},"right":{"is":0.974,"rel":0.699,"both":1.323,"count":1.387}},"sets4cannot":{"wrong":{"isnot":0.052,"all":3.539,"somenot":0.03,"isa":0.06,"some":0.03,"no":2.021},"right":{"isnot":19.065,"all":0.283,"somenot":38.402,"isa":16.636,"some":34.369,"no":0.494}},"order4must":{"wrong":{"lt":1.194,"ext":2.412,"pos":0.311,"nxt":0.058},"right":{"lt":0.836,"ext":0.414,"pos":3.22,"nxt":17.305}},"truth4must":{"wrong":{"rel":1.252,"both":0.958,"is":1.274,"count":0.278},"right":{"rel":0.799,"both":1.044,"is":0.784,"count":3.594}},"sets4must":{"wrong":{"some":2.758,"somenot":2.449,"no":0.03,"all":0.053,"isa":0.068,"isnot":0.081},"right":{"some":0.362,"somenot":0.408,"no":37.541,"all":19.024,"isa":14.757,"isnot":12.241}},"order4cannot":{"wrong":{"lt":0.947,"nxt":1.415,"pos":1.253,"ext":0.03},"right":{"lt":1.055,"nxt":0.706,"pos":0.798,"ext":33.835}},"truth4cannot":{"wrong":{"rel":1.5,"is":1.253,"count":0.366,"both":0.155},"right":{"rel":0.666,"is":0.8,"count":2.726,"both":6.447}},"sets5cannot":{"wrong":{"all":3.088,"some":0.03,"somenot":0.03,"no":0.678,"isnot":0.104,"isa":0.13},"right":{"all":0.325,"some":39.062,"somenot":39.062,"no":1.476,"isnot":9.621,"isa":7.646}},"order5must":{"wrong":{"adj":0.819,"ext":1.181,"pos":0.942,"nxt":0.552,"next":0.748,"lt":1.422},"right":{"adj":1.22,"ext":0.848,"pos":1.063,"nxt":1.813,"next":1.338,"lt":0.704}},"truth5cannot":{"wrong":{"is":0.958,"rel":1.276,"both":0.802,"count":0.796},"right":{"is":1.043,"rel":0.784,"both":1.247,"count":1.255}},"sets5must":{"wrong":{"somenot":2.808,"some":0.804,"isnot":0.123,"isa":0.109,"no":0.03,"all":0.03},"right":{"somenot":0.356,"some":1.245,"isnot":8.098,"isa":9.169,"no":39.062,"all":39.062}},"order5cannot":{"wrong":{"pos":1.184,"ext":0.489,"nxt":1.055,"lt":0.919,"adj":1.021,"next":1.063},"right":{"pos":0.844,"ext":2.044,"nxt":0.947,"lt":1.088,"adj":0.98,"next":0.941}},"truth5must":{"wrong":{"is":0.926,"count":0.692,"both":0.877,"rel":1.41},"right":{"is":1.081,"count":1.444,"both":1.139,"rel":0.709}}};/*END*/
+  /*PRIORS*/let PRIORS = {"order1must":{"wrong":{"ext":2.577,"lt":0.516,"pos":0.447,"nxt":0.03},"right":{"ext":0.387,"lt":1.939,"pos":2.241,"nxt":39.062}},"truth1must":{"wrong":{"rel":0.238,"both":0.426,"is":2.328},"right":{"rel":4.191,"both":2.347,"is":0.43}},"match1must":{"wrong":{"not":1.177,"is":0.875},"right":{"not":0.849,"is":1.143}},"sets1must":{"wrong":{"some":1.684,"no":0.572,"somenot":0.67,"all":0.351,"isnot":7.168,"isa":2.116},"right":{"some":0.594,"no":1.747,"somenot":1.495,"all":2.847,"isnot":0.14,"isa":0.474}},"order2must":{"wrong":{"ext":1.902,"lt":0.994,"pos":0.911,"nxt":0.03},"right":{"ext":0.526,"lt":1.007,"pos":1.098,"nxt":39.062}},"truth2must":{"wrong":{"rel":1.085,"count":0.888,"both":1.044,"is":0.952},"right":{"rel":0.92,"count":1.127,"both":0.959,"is":1.049}},"match2must":{"wrong":{"not":1.01,"is":0.99},"right":{"not":0.99,"is":1.011}},"sets2must":{"wrong":{"somenot":0.853,"some":0.768,"all":0.03,"no":0.532,"isnot":8.917,"isa":0.297},"right":{"somenot":1.172,"some":1.301,"all":39.062,"no":1.884,"isnot":0.112,"isa":3.37}},"order3must":{"wrong":{"lt":1.336,"ext":1.84,"pos":0.392,"nxt":0.078},"right":{"lt":0.749,"ext":0.543,"pos":2.548,"nxt":12.711}},"truth3must":{"wrong":{"count":0.685,"rel":1.459,"is":1.041,"both":0.737},"right":{"count":1.46,"rel":0.686,"is":0.961,"both":1.357}},"match3must":{"wrong":{"is":1.026,"not":0.965},"right":{"is":0.971,"not":1.039}},"sets3must":{"wrong":{"isa":0.528,"isnot":3.62,"all":0.2,"no":0.556,"somenot":1.627,"some":0.893},"right":{"isa":1.891,"isnot":0.277,"all":5.005,"no":1.799,"somenot":0.614,"some":1.121}},"order4cannot":{"wrong":{"pos":1.265,"lt":1.065,"nxt":1.464,"ext":0.035},"right":{"pos":0.791,"lt":0.938,"nxt":0.683,"ext":27.792}},"truth4cannot":{"wrong":{"is":1.208,"rel":1.577,"count":0.302,"both":0.121},"right":{"is":0.829,"rel":0.635,"count":3.308,"both":8.289}},"match4cannot":{"wrong":{"is":1.461,"not":0.977,"nlink":0.374,"link":0.345},"right":{"is":0.685,"not":1.025,"nlink":2.673,"link":2.904}},"sets4must":{"wrong":{"no":0.03,"somenot":2.305,"isa":0.116,"isnot":0.049,"some":3.269,"all":0.043},"right":{"no":33.77,"somenot":0.435,"isa":8.558,"isnot":20.675,"some":0.306,"all":23.213}},"order4must":{"wrong":{"lt":1.285,"ext":2.277,"pos":0.301,"nxt":0.031},"right":{"lt":0.779,"ext":0.439,"pos":3.336,"nxt":32.162}},"match4must":{"wrong":{"is":0.872,"not":1.596,"link":0.399,"nlink":0.342},"right":{"is":1.145,"not":0.627,"link":2.502,"nlink":2.922}},"truth4must":{"wrong":{"rel":1.309,"is":1.135,"both":1.021,"count":0.319},"right":{"rel":0.764,"is":0.88,"both":0.98,"count":3.138}},"sets4cannot":{"wrong":{"all":3.167,"no":2.585,"somenot":0.032,"isnot":0.052,"some":0.031,"isa":0.035},"right":{"all":0.315,"no":0.387,"somenot":31.152,"isnot":19.306,"some":32.484,"isa":29.267}},"order5cannot":{"wrong":{"lt":1.025,"adj":1.038,"pos":1.302,"next":1.152,"nxt":0.869,"ext":0.44},"right":{"lt":0.974,"adj":0.965,"pos":0.766,"next":0.867,"nxt":1.148,"ext":2.271}},"truth5cannot":{"wrong":{"is":1.031,"count":0.807,"rel":1.198,"both":0.804},"right":{"is":0.97,"count":1.239,"rel":0.833,"both":1.242}},"match5cannot":{"wrong":{"link":0.47,"nlink":0.513,"is":1.5,"not":0.979},"right":{"link":2.127,"nlink":1.946,"is":0.665,"not":1.022}},"sets5must":{"wrong":{"somenot":2.827,"isnot":0.154,"all":0.03,"some":0.724,"isa":0.103,"no":0.03},"right":{"somenot":0.353,"isnot":6.529,"all":39.062,"some":1.38,"isa":9.656,"no":39.062}},"order5must":{"wrong":{"adj":0.835,"ext":1.205,"pos":0.903,"lt":1.368,"next":0.772,"nxt":0.559},"right":{"adj":1.196,"ext":0.83,"pos":1.106,"lt":0.733,"next":1.295,"nxt":1.791}},"truth5must":{"wrong":{"is":1.029,"both":0.925,"rel":1.28,"count":0.695},"right":{"is":0.972,"both":1.08,"rel":0.781,"count":1.44}},"match5must":{"wrong":{"not":1.533,"is":1.034,"link":0.518,"nlink":0.412},"right":{"not":0.653,"is":0.97,"link":1.934,"nlink":2.424}},"sets5cannot":{"wrong":{"all":2.951,"no":0.843,"isa":0.152,"isnot":0.115,"somenot":0.03,"some":0.03},"right":{"all":0.34,"no":1.186,"isa":6.555,"isnot":8.715,"somenot":39.062,"some":39.062}}};/*END*/
   const priorFor = (form, level, mode) => (PRIORS[form + level + mode] || {}).wrong || {};
   // The kind of statement used as the answer is drawn with weights from the same table.
   function answerType(r, types, form, level, mode) {
@@ -785,12 +785,175 @@
     };
   }
 
+  // =====================================================================
+  // 4. MATCHING: who has what (each person has exactly one of each kind, nobody shares)
+  // =====================================================================
+  const MATCH_CATS = {
+    pet: { noun: 'pet', each: 'own', also: 'owns', pos: 'owns the ', neg: 'does not own the ', art: 'a ', orArt: 'the ', holder: 'owner', items: ['cat', 'dog', 'fish', 'bird', 'rabbit'] },
+    drink: { noun: 'drink', each: 'have', also: 'has', pos: 'drinks ', neg: 'does not drink ', art: '', orArt: '', holder: 'drinker', items: ['tea', 'coffee', 'juice', 'milk', 'water'] },
+    instrument: { noun: 'instrument', each: 'play', also: 'plays', pos: 'plays the ', neg: 'does not play the ', art: 'the ', orArt: 'the ', holder: 'player', items: ['piano', 'cello', 'flute', 'guitar', 'violin'] }
+  };
+  // Every possible world for n people and k kinds of thing: w[c][person] = index of the item they have.
+  const MATCH_SPACE = {};
+  function matchSpace(n, k) {
+    const id = n + '/' + k;
+    if (MATCH_SPACE[id]) return MATCH_SPACE[id];
+    const P = perms(n).map(x => x.order), W = [];
+    if (k === 1) P.forEach(a => W.push([a])); else P.forEach(a => P.forEach(b => W.push([a, b])));
+    return (MATCH_SPACE[id] = { W: W, memo: {} });
+  }
+  function matchEval(st, w) {
+    switch (st.t) {
+      case 'is': return w[st.c][st.p] === st.i;
+      case 'not': return w[st.c][st.p] !== st.i;
+      case 'either': return w[st.c][st.p] === st.i || w[st.c][st.q] === st.i;
+      case 'oneOf': return w[st.c][st.p] === st.i || w[st.c][st.p] === st.j;
+      case 'link': return w[1][w[0].indexOf(st.i)] === st.j;      // the owner of item i (first kind) has item j (second kind)
+      case 'nlink': return w[1][w[0].indexOf(st.i)] !== st.j;
+    }
+    return false;
+  }
+  const matchKey = st => st.t === 'link' || st.t === 'nlink' ? st.t + st.i + '.' + st.j
+    : st.t + st.c + ':' + (st.t === 'either' ? Math.min(st.p, st.q) + '|' + Math.max(st.p, st.q) : st.p) + ':' + (st.t === 'oneOf' ? Math.min(st.i, st.j) + '|' + Math.max(st.i, st.j) : st.i);
+  function matchBits(space, st) {
+    const id = matchKey(st);
+    if (space.memo[id]) return space.memo[id];
+    const W = space.W, b = new Uint32Array(Math.ceil(W.length / 32));
+    for (let x = 0; x < W.length; x++) if (matchEval(st, W[x])) b[x >> 5] |= (1 << (x & 31));
+    return (space.memo[id] = b);
+  }
+  function matchText(st, N, C, items) {
+    if (st.t === 'link' || st.t === 'nlink') {
+      const a = st.v ? 1 : 0, b = 1 - a, ia = a ? st.j : st.i, ib = a ? st.i : st.j;
+      return 'The ' + items[a][ia] + ' ' + C[a].holder + ' ' + (st.t === 'link' ? C[b].pos : C[b].neg) + items[b][ib] + '.';
+    }
+    const c = C[st.c], it = items[st.c];
+    if (st.t === 'is') return N[st.p] + ' ' + c.pos + it[st.i] + '.';
+    if (st.t === 'not') return N[st.p] + ' ' + c.neg + it[st.i] + '.';
+    if (st.t === 'either') return 'Either ' + N[st.p] + ' or ' + N[st.q] + ' ' + c.pos + it[st.i] + '.';
+    return N[st.p] + ' ' + c.pos + it[st.i] + ' or ' + c.orArt + it[st.j] + '.';
+  }
+  function matchClue(r, type, h, n, k) {
+    const p = ri(r, n), c = ri(r, k), other = x => { let y; do { y = ri(r, n); } while (y === x); return y; };
+    switch (type) {
+      case 'is': return { t: 'is', c: c, p: p, i: h[c][p] };
+      case 'not': return { t: 'not', c: c, p: p, i: other(h[c][p]) };
+      case 'either': return ri(r, 2) ? { t: 'either', c: c, p: p, q: other(p), i: h[c][p] } : { t: 'either', c: c, p: other(p), q: p, i: h[c][p] };
+      case 'oneOf': return ri(r, 2) ? { t: 'oneOf', c: c, p: p, i: h[c][p], j: other(h[c][p]) } : { t: 'oneOf', c: c, p: p, i: other(h[c][p]), j: h[c][p] };
+      case 'link': return k < 2 ? null : { t: 'link', i: h[0][p], j: h[1][p], v: ri(r, 2) };
+      case 'nlink': return k < 2 ? null : { t: 'nlink', i: h[0][p], j: other(h[1][p]), v: ri(r, 2) };
+    }
+    return null;
+  }
+  const MATCH = {
+    1: { n: 3, k: 1, m: [2], w: { not: 60, is: 40 }, worlds: [1, 2], dmin: 2, direct: 1 },
+    2: { n: 4, k: 1, m: [3], w: { not: 50, is: 25, either: 25 }, worlds: [1, 4], dmin: 2, direct: 1 },
+    3: { n: 4, k: 1, m: [4], w: { not: 45, either: 25, oneOf: 20, is: 10 }, worlds: [1, 3], dmin: 3, direct: 1 },
+    4: { n: 3, k: 2, m: [4, 5], w: { link: 30, nlink: 20, not: 25, is: 15, either: 10 }, worlds: [1, 4], dmin: 3, direct: 1 },
+    5: { n: 4, k: 2, m: [5, 6], w: { link: 25, nlink: 25, not: 20, either: 10, oneOf: 10, is: 10 }, worlds: [1, 6], dmin: 4, direct: 2 }
+  };
+
+  function genMatch(r, level, relax, plan) {
+    const sp = MATCH[level], n = sp.n, k = sp.k, m = pick(r, sp.m);
+    const N = shuffle(r, NAMES).slice(0, n);
+    const C = shuffle(r, Object.keys(MATCH_CATS)).slice(0, k).map(x => MATCH_CATS[x]);
+    const items = C.map(c => shuffle(r, c.items).slice(0, n));
+    const space = matchSpace(n, k), W = space.W, h = W[ri(r, W.length)];
+    const tKeys = Object.keys(sp.w), tW = tKeys.map(x => sp.w[x]);
+    const clues = [], keys = {};
+    let direct = 0;
+    for (let guard = 0; clues.length < m && guard < 80; guard++) {
+      const c = matchClue(r, tKeys[wpick(r, tW)], h, n, k);
+      if (!c || keys[matchKey(c)]) continue;
+      if (c.t === 'is') { if (direct >= sp.direct) continue; direct++; }
+      keys[matchKey(c)] = 1; clues.push(c);
+    }
+    if (clues.length < m) return null;
+    if (k === 2 && !clues.some(c => c.t === 'link' || c.t === 'nlink')) return null;
+    // "Nia drinks coffee or water" next to "Nia does not drink coffee" is just a clumsy "Nia drinks water"
+    if (clues.some(a => a.t === 'oneOf' && clues.some(b => b.t === 'not' && b.c === a.c && b.p === a.p && (b.i === a.i || b.i === a.j)))) return null;
+    const cb = clues.map(c => matchBits(space, c));
+    const subBits = [bFull(W)];
+    for (let mask = 1; mask < (1 << m); mask++) { const low = mask & -mask, i = 31 - Math.clz32(low); subBits.push(bAnd(subBits[mask ^ low], cb[i])); }
+    const all = subBits[(1 << m) - 1], count = bCount(all);
+    if (count < sp.worlds[0] || count > sp.worlds[1]) return null;
+    for (let i = 0; i < m; i++) if (bCount(subBits[((1 << m) - 1) ^ (1 << i)]) === count) return null;
+
+    const mode = level >= 4 && plan.cannot && relax < 2 ? 'cannot' : 'must';
+    const dmin = Math.max(2, sp.dmin - relax);
+    const cands = [];
+    function cand(st, type, feats) {
+      if (keys[matchKey(st)]) return;
+      const bits = matchBits(space, st);
+      const c = { st: st, type: type, feats: [type].concat(feats), bits: bits, group: Array.prototype.join.call(bits, ','), text: matchText(st, N, C, items) };
+      c.forced = bSubset(all, bits); c.impossible = bDisjoint(all, bits);
+      c.single = cb.some(x => bSubset(x, bits) || bDisjoint(x, bits));
+      cands.push(c);
+    }
+    for (let c = 0; c < k; c++) for (let p = 0; p < n; p++) for (let i = 0; i < n; i++) {
+      cand({ t: 'is', c: c, p: p, i: i }, 'is', ['x:' + p, 'i:' + c + '.' + i]);
+      cand({ t: 'not', c: c, p: p, i: i }, 'not', ['x:' + p, 'i:' + c + '.' + i]);
+    }
+    if (k === 2) for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
+      cand({ t: 'link', i: i, j: j, v: ri(r, 2) }, 'link', ['i:0.' + i, 'i:1.' + j]);
+      cand({ t: 'nlink', i: i, j: j, v: ri(r, 2) }, 'nlink', ['i:0.' + i, 'i:1.' + j]);
+    }
+    const answers = cands.filter(c => mode === 'must' ? c.forced : c.impossible);
+    answers.forEach(c => { c.sub = minSubset(m, mask => mode === 'must' ? bSubset(subBits[mask], c.bits) : bDisjoint(subBits[mask], c.bits)); });
+    const good = answers.filter(c => c.sub.size >= dmin);
+    if (!good.length) return null;
+    const types = good.map(c => c.type).filter((t, i, a) => a.indexOf(t) === i);
+    const type = answerType(r, types, 'match', level, mode);
+    const ofType = good.filter(c => c.type === type);
+    const ans = ofType[wpick(r, ofType.map(c => c.sub.size * c.sub.size))];
+
+    const groupCount = list => list.map(c => c.group).filter((g, i, a) => g !== ans.group && a.indexOf(g) === i).length;
+    let pool = cands.filter(c => c !== ans && (mode === 'must' ? !c.forced : !c.impossible));
+    const strong = pool.filter(c => !c.single || c.type === ans.type);
+    if (groupCount(strong) >= 6) pool = strong;
+    if (groupCount(pool) < 4) return null;
+    const isOpen = c => !c.forced && !c.impossible;
+    const open = groupCount(pool.filter(isOpen));
+    if (level >= 3 && count > 1 && open < 2) return null;
+    const needOpen = Math.min(2, open);
+    const four = chooseOptions(r, ans, pool, priorFor('match', level, mode), f => f.filter(isOpen).length >= needOpen);
+    if (!four) return null;
+    const opts = shuffle(r, [ans].concat(four)), ai = opts.indexOf(ans), L = LETTERS[ai];
+
+    const worldIdx = bList(all), one = count === 1;
+    const rows = worldIdx.map(x => range(n).map(p => range(k).map(c => items[c][W[x][c][p]])));
+    const has = (c, x) => (c.bits[x >> 5] >>> (x & 31) & 1) === 1;
+    const everyTxt = t => t + (one ? ' in that table.' : ' in every one of these tables.');
+    const notes = opts.map((c, i) => {
+      if (i === ai) return everyTxt(mode === 'must' ? 'True' : 'False');
+      if (mode === 'must') return c.impossible ? everyTxt('False') : 'False in table ' + (1 + worldIdx.findIndex(x => !has(c, x))) + '.';
+      return c.forced ? everyTxt('True') : 'True in table ' + (1 + worldIdx.findIndex(x => has(c, x))) + '.';
+    });
+    const list = (c, it) => listAnd(it.map(x => c.art + x));
+    const intro = listAnd(N) + ' each ' + C[0].each + ' a different ' + C[0].noun + ': ' + list(C[0], items[0]) + '.'
+      + (k === 2 ? ' Each also ' + C[1].also + ' a different ' + C[1].noun + ': ' + list(C[1], items[1]) + '.' : '');
+    const blocks = [
+      { t: 'p', text: one ? 'Only one way of sharing them out fits every statement:' : 'Only these ' + NUM[count] + ' ways of sharing them out fit every statement:' },
+      { t: 'match', people: N, rows: rows.map(row => row.map(cell => cell.join(' + '))) },
+      { t: 'p', text: 'Option ' + L + (mode === 'must' ? ' is true in ' : ' is false in ') + (one ? 'it' : count === 2 ? 'both' : 'all of them') + '. ' +
+          enoughText(ans.sub, m, mode === 'must' ? 'force it' : 'rule it out') },
+      { t: 'options', notes: notes }
+    ];
+    return {
+      form: 'match', mode: mode, intro: intro,
+      premises: clues.map(c => matchText(c, N, C, items)),
+      options: opts.map(c => c.text), answer: ai, explain: blocks,
+      meta: { types: opts.map(c => c.type), feats: opts.map(c => c.feats), depth: ans.sub.size, worlds: count },
+      check: { tables: rows }
+    };
+  }
+
   // ---------- public ----------
-  const GEN = { sets: genSets, order: genOrder, truth: genTruth };
+  const GEN = { sets: genSets, order: genOrder, truth: genTruth, match: genMatch };
   function generate(level, seed) {
     level = Math.max(1, Math.min(5, Math.floor(level) || 1));
     seed = seed >>> 0;
-    const form = FORMS[seed % 3];
+    const form = FORMS[seed % FORMS.length];
     const r = rng((seed ^ Math.imul(level, 0x9E3779B1)) >>> 0);
     // Decided once per puzzle, so that these shares do not depend on how easy each kind is to build.
     const plan = { cannot: r() < 0.35, several: r() < 0.4 };

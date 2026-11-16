@@ -297,6 +297,84 @@ function truthCheck(p) {
   });
   return { worlds: fits.length, pairs: complementPairs(opts.map((t, i) => i), (a, b) => every.every(h => opts[a](h) !== opts[b](h))) };
 }
+// ---------------- matching ----------------
+// Its own table of how each kind of thing is worded, and its own way of listing every sharing-out.
+const KINDS = {
+  pet: { pos: 'owns the ', neg: 'does not own the ', or: 'the ', holder: 'owner', art: /^a /, each: 'own', also: 'owns' },
+  drink: { pos: 'drinks ', neg: 'does not drink ', or: '', holder: 'drinker', art: /^/, each: 'have', also: 'has' },
+  instrument: { pos: 'plays the ', neg: 'does not play the ', or: 'the ', holder: 'player', art: /^the /, each: 'play', also: 'plays' }
+};
+const splitList = (t) => t.split(/, | and /);
+function matchCheck(p) {
+  const im = /^(.+) each (\w+) a different (\w+): (.+?)\.(?: Each also (\w+) a different (\w+): (.+?)\.)?$/.exec(p.intro);
+  if (!im) fail(p, 'cannot read the matching intro');
+  const names = splitList(im[1]), n = names.length, kinds = [];
+  const addKind = (noun, verb, list, also) => { const K = KINDS[noun]; if (!K || verb !== (also ? K.also : K.each)) fail(p, 'unknown kind ' + noun);
+    const items = splitList(list).map((x) => x.replace(K.art, '')); if (items.length !== n || new Set(items).size !== n) fail(p, 'wrong number of ' + noun + 's'); kinds.push({ K: K, items: items }); };
+  addKind(im[3], im[2], im[4], false);
+  if (im[6]) addKind(im[6], im[5], im[7], true);
+  if (new Set(names).size !== n) fail(p, 'a name is repeated');
+  const who = (x) => { const i = names.indexOf(x); if (i < 0) fail(p, 'stranger: ' + x); return i; };
+  // has(world, person, kind, item); a world is one array per kind: world[kind][person] = item name
+  function parse(text) {
+    if (!/\.$/.test(text)) return null;
+    const body = text.slice(0, -1);
+    for (let k = 0; k < kinds.length; k++) {
+      const K = kinds[k].K, items = kinds[k].items;
+      for (const neg of [true, false]) {
+        const verb = neg ? K.neg : K.pos, at = body.indexOf(' ' + verb);
+        if (at < 0) continue;
+        const subj = body.slice(0, at), obj = body.slice(at + 1 + verb.length);
+        let objs = [obj];
+        if (!neg && obj.indexOf(' or ') >= 0) { const two = obj.split(' or '); if (two.length !== 2 || two[1].indexOf(K.or) !== 0) continue; objs = [two[0], two[1].slice(K.or.length)]; }
+        if (objs.some((o) => items.indexOf(o) < 0)) continue;
+        let m, people;
+        if ((m = /^Either (\w+) or (\w+)$/.exec(subj))) { if (neg || objs.length > 1) return null; people = () => [who(m[1]), who(m[2])]; }
+        else if ((m = /^The (\w+) (\w+)$/.exec(subj))) {
+          const j = kinds.findIndex((q, qi) => qi !== k && q.K.holder === m[2] && q.items.indexOf(m[1]) >= 0);
+          if (j < 0 || objs.length > 1) return null;
+          people = (w) => [w[j].indexOf(m[1])];
+        } else if (/^\w+$/.test(subj)) { const i = who(subj); people = () => [i]; }
+        else continue;
+        return (w) => { const hit = people(w).some((person) => objs.indexOf(w[k][person]) >= 0); return neg ? !hit : hit; };
+      }
+    }
+    return null;
+  }
+  const prem = p.premises.map(parse), opts = p.options.map(parse);
+  if (prem.concat(opts).some((x) => !x)) fail(p, 'cannot parse a matching statement');
+  function arrangements(items) { let out = [[]]; for (const it of items) { const next = []; out.forEach((o) => { for (let at = 0; at <= o.length; at++) next.push(o.slice(0, at).concat([it], o.slice(at))); }); out = next; } return out; }
+  let every = arrangements(kinds[0].items).map((a) => [a]);
+  if (kinds.length === 2) { const second = arrangements(kinds[1].items), both = []; every.forEach((w) => second.forEach((b) => both.push([w[0], b]))); every = both; }
+  const fits = every.filter((w) => prem.every((t) => t(w)));
+  if (!fits.length) fail(p, 'no sharing-out fits');
+  prem.forEach((_, skip) => { if (every.filter((w) => prem.every((t, i) => i === skip || t(w))).length === fits.length) fail(p, 'statement ' + (skip + 1) + ' adds nothing'); });
+  opts.forEach((t, i) => {
+    const trues = fits.filter((w) => t(w)).length;
+    if (p.mode === 'must') {
+      if (i === p.answer && trues !== fits.length) fail(p, 'answer is not forced');
+      if (i !== p.answer && trues === fits.length) fail(p, 'option ' + i + ' is also forced');
+    } else {
+      if (i === p.answer && trues !== 0) fail(p, 'answer is not impossible');
+      if (i !== p.answer && trues === 0) fail(p, 'option ' + i + ' is also impossible');
+    }
+  });
+  // explanation: the tables shown must be exactly the sharings-out that fit, and each note must be right
+  const sig = (w) => names.map((_, person) => w.map((kind) => kind[person]).join('+')).join(',');
+  const listed = p.check.tables.map((row) => row.map((cell) => cell.join('+')).join(','));
+  if (listed.length !== fits.length || new Set(listed).size !== listed.length || fits.some((w) => listed.indexOf(sig(w)) < 0)) fail(p, 'explanation lists the wrong tables');
+  const block = p.explain.find((b) => b.t === 'match');
+  if (block.people.join() !== names.join() || block.rows.map((row) => row.map((c) => c.replace(/ \+ /g, '+')).join(',')).join(';') !== listed.join(';')) fail(p, 'shown tables differ from checked tables');
+  const worldOf = (s) => fits.find((w) => sig(w) === s);
+  p.explain.find((b) => b.t === 'options').notes.forEach((note, i) => {
+    const m = /^(True|False) in table (\d+)\.$/.exec(note);
+    if (m) { if (opts[i](worldOf(listed[Number(m[2]) - 1])) !== (m[1] === 'True')) fail(p, 'note for option ' + i + ' is wrong'); return; }
+    const m2 = /^(True|False) in (that table|every one of these tables)\.$/.exec(note);
+    if (!m2) fail(p, 'unknown note: ' + note);
+    if (fits.some((w) => opts[i](w) !== (m2[1] === 'True'))) fail(p, 'note for option ' + i + ' is wrong');
+  });
+  return { worlds: fits.length, pairs: complementPairs(opts.map((t, i) => i), (a, b) => every.every((w) => opts[a](w) !== opts[b](w))) };
+}
 function complementPairs(idx, opposite) {
   const out = [];
   for (let a = 0; a < idx.length; a++) for (let b = a + 1; b < idx.length; b++) if (opposite(a, b)) out.push([a, b]);
@@ -304,7 +382,7 @@ function complementPairs(idx, opposite) {
 }
 
 // ---------------- run ----------------
-const CHECK = { sets: setsCheck, order: orderCheck, truth: truthCheck };
+const CHECK = { sets: setsCheck, order: orderCheck, truth: truthCheck, match: matchCheck };
 const stats = {};
 const bump = (o, k, by) => { o[k] = (o[k] || 0) + (by === undefined ? 1 : by); };
 let total = 0, slowest = 0, maxAttempts = 0;
@@ -323,7 +401,7 @@ for (let level = 1; level <= 5; level++) {
     maxAttempts = Math.max(maxAttempts, p.attempts);
     total++;
     // basics
-    if (p.form !== E.FORMS[seed % 3]) fail(p, 'form does not follow the seed');
+    if (p.form !== E.FORMS[seed % 4]) fail(p, 'form does not follow the seed');
     if (p.options.length !== 5 || new Set(p.options).size !== 5) fail(p, 'options are not five different texts');
     if (new Set(p.premises).size !== p.premises.length) fail(p, 'a statement is repeated');
     if (p.options.some(o => p.premises.indexOf(o) >= 0)) fail(p, 'an option repeats a statement');

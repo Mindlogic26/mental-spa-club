@@ -27,6 +27,7 @@ The engines have no page code in them and also run in Node, so they can be check
 
 ```
 node tools/check-matrices.js            # 20,000 puzzles, about a minute
+node tools/check-numbers.js             # 20,000 puzzles
 node tools/check-logic.js 2000          # 30,000 puzzles over both wordings
 ```
 

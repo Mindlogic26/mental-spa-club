@@ -203,13 +203,32 @@
     }
     return e.filter((v) => isInt(v) && v !== want);
   }
+  // Options are shown in ascending order, so where the answer falls among them must give nothing away.
+  // Its place (smallest, second, ... largest) is drawn first, each equally likely; then that many
+  // wrong options are taken below it and the rest above. Real slips are used first, on whichever side
+  // they fall. The remaining ones are spread out from the options already chosen, not packed round
+  // the answer, so the answer is not the number with the most close neighbours either.
   function pickOptions(want, errors, r, allowNeg) {
-    const band = Math.abs(want) + 20, seen = new Set([want]), out = [];
-    const ok = (v) => isInt(v) && !seen.has(v) && (allowNeg || v >= 0 || want < 0) && v >= want - band && v <= want + band;
-    for (const v of errors) { if (ok(v)) { seen.add(v); out.push(v); } if (out.length === 4) break; }
-    const fill = r.shuffle([want + 2, want - 2, want + 3, want - 3, want + 4, want - 4, want + 6, want - 6, want + 10, want - 10, want + 1, want - 1]);
-    for (const v of fill) { if (out.length === 4) break; if (ok(v)) { seen.add(v); out.push(v); } }
-    return out.length === 4 ? out : null;
+    const band = Math.abs(want) + 20, floor = allowNeg || want < 0 ? want - band : 0;
+    const rank = r.int(Math.min(4, want - floor) + 1);
+    const need = { lo: rank, hi: 4 - rank }, got = { lo: [], hi: [] }, seen = new Set([want]);
+    const ok = (v) => isInt(v) && !seen.has(v) && v >= floor && v >= want - band && v <= want + band;
+    for (const v of errors) {
+      const side = v < want ? 'lo' : 'hi';
+      if (ok(v) && got[side].length < need[side]) { seen.add(v); got[side].push(v); }
+    }
+    const span = Math.max(6, Math.round(Math.abs(want) * 0.15));
+    for (const side of ['lo', 'hi']) {
+      const dir = side === 'lo' ? -1 : 1;
+      for (let guard = 0; got[side].length < need[side] && guard < 200; guard++) {
+        const edge = got[side].reduce((e, v) => (dir * v > dir * e ? v : e), want);
+        let v = edge + dir * r.range(1, span);                                   // beyond the furthest so far
+        if (guard % 2 || !ok(v)) v = want + dir * r.range(1, Math.max(2, Math.abs(edge - want) + 2));   // or somewhere in between
+        if (ok(v)) { seen.add(v); got[side].push(v); }
+      }
+      if (got[side].length < need[side]) return null;
+    }
+    return got.lo.concat(got.hi);
   }
 
   function genSeq(r, kind, typed) {

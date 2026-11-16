@@ -785,7 +785,7 @@ footer p { margin: 0; max-width: 75ch; }
   }
   // the lock is dropped whenever the page is hidden, so take it again on the way back
   document.addEventListener('visibilitychange', () => { if (!document.hidden && M.running && !M.lock) medWake(true); });
-  const MED_MINS = [3, 5, 10, 20];
+  const MED_MINS = [1, 3, 5, 10, 20];
   function medBell(ctx, at, soft) {
     // a bowl-like tone: a few partials, soft attack, long decay
     [[1, 1], [2.76, 0.45], [5.4, 0.2], [8.93, 0.08]].forEach(([ratio, level], i) => {

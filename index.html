@@ -575,14 +575,20 @@ footer p { margin: 0; max-width: 75ch; }
       label: d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) };
   }
   const D = { day: null, items: [], idx: 0, phase: 'intro', used: 0, since: 0, frozen: true, timer: null, explain: false, copied: '' };
+  // Changes whenever the same day would give different puzzles, so saved answers are not read against them.
+  const DAILY_VERSION = 'mixed-1/' + E.VERSION;
   function dailyLoad() {
     const t = today(); if (D.day && D.day.key === t.key) return;
     clearInterval(D.timer);
     D.day = t; D.idx = 0; D.phase = 'intro'; D.used = 0; D.frozen = true; D.explain = false; D.copied = '';
     const base = Number(t.key.replace(/-/g, ''));
-    D.items = E.TIERS.map((tier) => ({ puzzle: gen('matrices', base * 7 + tier, tier), chosen: null }));
+    // One puzzle per level. Matrices open and close the set; Numbers, Shapes and Logic take levels
+    // 2 to 4 and swap places each day. Numbers never takes level 5, where its answers are typed.
+    const mid = ['numbers', 'shapes', 'logic'], turn = t.num % 3;
+    const rooms = ['matrices', mid[turn], mid[(turn + 1) % 3], mid[(turn + 2) % 3], 'matrices'];
+    D.items = rooms.map((room, i) => ({ puzzle: gen(room, base * 7 + i + 1, i + 1), chosen: null }));
     const sv = store.get('daily', null);
-    if (sv && sv.date === t.key && sv.v === E.VERSION && Array.isArray(sv.chosen)) {
+    if (sv && sv.date === t.key && sv.v === DAILY_VERSION && Array.isArray(sv.chosen)) {
       sv.chosen.forEach((c, i) => { if (D.items[i] && c !== null && c >= 0 && c < 8) D.items[i].chosen = c; });
       D.used = sv.used || 0;
       const n = D.items.findIndex((it) => it.chosen === null);
@@ -592,7 +598,7 @@ footer p { margin: 0; max-width: 75ch; }
   const dailyElapsed = () => D.used + (D.frozen ? 0 : Math.floor((Date.now() - D.since) / 1000));
   const dailyRight = () => D.items.filter((it) => it.chosen === it.puzzle.answer).length;
   const dailyStreak = () => { const s = store.get('streak', { last: '', n: 0 }); return s.last === D.day.key || s.last === D.day.prev ? s.n : 0; };
-  function dailySave() { store.set('daily', { date: D.day.key, v: E.VERSION, chosen: D.items.map((it) => it.chosen), used: dailyElapsed() }); }
+  function dailySave() { store.set('daily', { date: D.day.key, v: DAILY_VERSION, chosen: D.items.map((it) => it.chosen), used: dailyElapsed() }); }
   function dailyStart() {
     D.phase = 'run'; D.since = Date.now(); D.frozen = false; clearInterval(D.timer);
     D.timer = setInterval(() => { const el = $('#dclock'); if (el) el.textContent = fmt(dailyElapsed()); }, 1000);
@@ -617,10 +623,10 @@ footer p { margin: 0; max-width: 75ch; }
       const started = D.items.some((it) => it.chosen !== null);
       v.innerHTML = `<section class="intro">
         <h2>Daily five</h2>
-        <p class="lede">Five puzzles, one from each level, the same for everyone today. It takes about five minutes. Each answer is final, and the clock only counts up, so there is no rush.</p>
+        <p class="lede">Five puzzles, one from each level and from every kind of room, the same for everyone today. It takes about five minutes. Each answer is final, and the clock only counts up, so there is no rush.</p>
         <ul class="facts">
           <li><b>#${D.day.num}</b><span>${D.day.label}</span></li>
-          <li><b>5</b><span>puzzles, from level 1 to level 5</span></li>
+          <li><b>5</b><span>puzzles: matrices, numbers, shapes and logic</span></li>
           <li><b>${dailyStreak()}</b><span>day streak on this device</span></li>
         </ul>
         <button type="button" class="btn primary big" id="btn-dstart">${started ? 'Continue today’s five' : 'Start today’s five'}</button>
@@ -631,7 +637,7 @@ footer p { margin: 0; max-width: 75ch; }
     if (D.phase === 'run') {
       const done = it.chosen !== null, last = D.items.every((x) => x.chosen !== null);
       v.innerHTML = `
-        <div class="toolbar"><div class="meta"><span class="qnum">Puzzle ${D.idx + 1} of 5</span><span class="pill tier-${p.tier}">${TIER_LABEL[p.tier]}</span></div>
+        <div class="toolbar"><div class="meta"><span class="qnum">Puzzle ${D.idx + 1} of 5 \u00b7 ${ROOM_LABEL[p.eng]}</span><span class="pill tier-${p.tier}">${TIER_LABEL[p.tier]}</span></div>
           <div class="clock" id="dclock" aria-label="Time elapsed">${fmt(dailyElapsed())}</div></div>
         <div class="puzzle">${puzzleHTML({ puzzle: p, chosen: it.chosen, reveal: done, locked: done, explain: D.explain })}</div>
         <div class="after">${done ? `${it.chosen === p.answer ? '<p class="verdict ok">Correct.</p>' : `<p class="verdict no">Not this time. The answer is ${LETTERS[p.answer]}.</p>`}
